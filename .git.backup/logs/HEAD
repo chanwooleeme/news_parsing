@@ -1,0 +1,10 @@
+0000000000000000000000000000000000000000 23969daf897d4d459fcd893123028a57f0d50101 chanwooleeme <82151774+chanwooleeme@users.noreply.github.com> 1740560711 +0900	commit (initial): 기사 html 저장 기능
+23969daf897d4d459fcd893123028a57f0d50101 76595ef88d402b548bea1f42d6d58d65d8336a87 chanwooleeme <82151774+chanwooleeme@users.noreply.github.com> 1740567691 +0900	commit: [FIX] 폴더 이름 수정
+76595ef88d402b548bea1f42d6d58d65d8336a87 f73c6aef2f3ce5d777e64e13d4090887d60751db chanwooleeme <82151774+chanwooleeme@users.noreply.github.com> 1740567957 +0900	commit: 피드 파서 개발 완료
+f73c6aef2f3ce5d777e64e13d4090887d60751db f218ea6bb36d18b71aafcc7e6b4441b8c205f74a chanwooleeme <82151774+chanwooleeme@users.noreply.github.com> 1740814183 +0900	commit: RSS 피드 파서 개발 완료
+f218ea6bb36d18b71aafcc7e6b4441b8c205f74a 78d510edf9b37f18578e2dfe3f84447bc5baf0f7 chanwooleeme <82151774+chanwooleeme@users.noreply.github.com> 1741264476 +0900	commit: html -> parquet 기능 개발 완료
+78d510edf9b37f18578e2dfe3f84447bc5baf0f7 79e8e9d6cbcc887f432d5860e05e6f4e17c0c64a chanwooleeme <82151774+chanwooleeme@users.noreply.github.com> 1741712227 +0900	commit: summarize 기능
+79e8e9d6cbcc887f432d5860e05e6f4e17c0c64a 1d477323abb807a64fc2c9a2d386f5d5b3fcced6 chanwooleeme <82151774+chanwooleeme@users.noreply.github.com> 1741712505 +0900	commit: t5 사용하도록 수정
+1d477323abb807a64fc2c9a2d386f5d5b3fcced6 beba2a747f01e4a74767904e05b9c565ac3718bf chanwooleeme <82151774+chanwooleeme@users.noreply.github.com> 1742305994 +0900	commit: feat: 백엔드 틀 개발
+beba2a747f01e4a74767904e05b9c565ac3718bf 8fcf11fbac0c3a8801262a2707d8bb262eac19cc chanwooleeme <82151774+chanwooleeme@users.noreply.github.com> 1742306343 +0900	commit: git ignore update
+8fcf11fbac0c3a8801262a2707d8bb262eac19cc 359189dc89fa824fd6ff1009b1e1c5c979dc7f85 chanwooleeme <82151774+chanwooleeme@users.noreply.github.com> 1742631951 +0900	commit: feat: RSS피드에서 html 다운로드 기능
