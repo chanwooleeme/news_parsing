@@ -38,6 +38,6 @@ RUN mkdir -p /opt/airflow/data/html && \
     chmod 755 /opt/airflow/data/html
 
 USER root
-RUN mkdir -p /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins && \
-    chmod -R 777 /opt/airflow/logs
+RUN mkdir -p /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins /opt/airflow/data/html && \
+    chmod -R 777 /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins /opt/airflow/data/html    
 USER airflow
