@@ -25,3 +25,14 @@ USER airflow
 
 # PYTHONPATH 설정
 ENV PYTHONPATH=/opt/airflow
+
+# Airflow 설정
+ENV AIRFLOW_HOME=/opt/airflow
+ENV AIRFLOW_CONFIG=/opt/airflow/airflow.cfg
+ENV AIRFLOW_LOG_DIR=/opt/airflow/logs
+ENV AIRFLOW_DAG_DIR=/opt/airflow/dags
+ENV RSS_FEED_HTML_DIR=/opt/airflow/data/html
+
+# ... existing code ...
+RUN mkdir -p /opt/airflow/data/html && \
+    chmod 755 /opt/airflow/data/html
