@@ -14,7 +14,7 @@ RUN chown -R airflow:root /opt/airflow/rss_feed_package
 
 # 디렉토리 생성 및 권한 설정
 RUN mkdir -p /opt/airflow/data/html /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins && \
-    chmod -R 775 /opt/airflow/data /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins
+    chmod -R 777 /opt/airflow/data /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins
 
 USER airflow
 RUN pip install -e /opt/airflow/rss_feed_package
