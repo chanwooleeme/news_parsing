@@ -1,51 +1,47 @@
 import redis
-import hashlib
-
+import os
+import logging
+from typing import Set, Dict, List
+logger = logging.getLogger(__name__)
 
 class RedisManager:
-    """Redis 서버와 상호작용을 관리하는 클래스"""
+    def __init__(self):
+        try:
+            self.redis_client = redis.Redis(
+                host=os.getenv('REDIS_HOST', 'redis'),
+                port=int(os.getenv('REDIS_PORT', 6379)),
+                decode_responses=True,
+                password=os.getenv('REDIS_PASSWORD')
+            )
+            self.key_prefix = "article:url:"
+            # 연결 테스트
+            self.redis_client.ping()
+            logger.info("Redis 연결 성공")
+        except Exception as e:
+            logger.error(f"Redis 연결 실패: {e}")
     
-    def __init__(self, host='redis', port=6379, db=0, password=None):
+    def get_all_article_urls(self) -> Set[str]:
         """
-        RedisManager 초기화
-        
-        Args:
-            host (str): Redis 서버 호스트
-            port (int): Redis 서버 포트
-            db (int): Redis 데이터베이스 번호
-            password (str, optional): Redis 서버 비밀번호
+        Redis에서 key_prefix에 해당하는 모든 키를 가져와서, URL 부분만 추출하여 집합으로 반환.
         """
-        self.redis_client = redis.Redis(host=host, port=port, db=db, password=password)
-        
-    def is_new_url(self, url, rss_url=None):
-        """
-        URL이 이전에 처리된 적이 있는지 확인
-        
-        Args:
-            url (str): 확인할 URL
-            rss_url (str, optional): RSS 피드 URL
-            
-        Returns:
-            bool: 새로운 URL이면 True, 이미 처리된 URL이면 False
-        """
-        url_hash = self._create_hash(url)
-        key = f"{rss_url}:{url_hash}" if rss_url else url_hash
-        
-        if self.redis_client.exists(key):
-            return False
-        
-        # Redis에 URL 해시 저장 (1시간 유효)
-        self.redis_client.set(key, 1, ex=3600)
-        return True
+        # Redis의 KEYS 명령은 프로덕션에서는 성능 이슈가 있을 수 있으나,
+        # 4천개 정도라면 문제 없을 것으로 예상됨.
+        keys = self.redis_client.keys(self.key_prefix + "*")
+        # 각 키에서 접두사를 제거하고 실제 URL만 추출
+        urls = {key[len(self.key_prefix):] for key in keys}
+        return urls
     
-    def _create_hash(self, url):
+    
+    def _store_article(self, url: str, publisher: str) -> None:
         """
-        URL의 해시값 생성
-        
-        Args:
-            url (str): 해시할 URL
-            
-        Returns:
-            str: URL의 MD5 해시값
+        새로운 기사를 redis에 저장.
+        키는 "article:url:{url}" 형태로 저장하며, 값은 publisher로 저장.
         """
-        return hashlib.md5(url.encode()).hexdigest() 
+        key = self.key_prefix + url
+        self.redis_client.set(key, publisher)
+
+    def store_articles(self, articles: Dict[str, List[str]]) -> None:
+        """여러 기사를 redis에 저장"""
+        for publisher, urls in articles.items():
+            for url in urls:
+                self._store_article(url, publisher)
