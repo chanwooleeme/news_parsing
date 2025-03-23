@@ -12,32 +12,19 @@ RUN apt-get update && \
 COPY feed_package/rss_feed_package /opt/airflow/rss_feed_package
 RUN chown -R airflow:root /opt/airflow/rss_feed_package
 
+# 디렉토리 생성 및 권한 설정
+RUN mkdir -p /opt/airflow/data/html /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins && \
+    chmod -R 775 /opt/airflow/data /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins
+
 USER airflow
 RUN pip install -e /opt/airflow/rss_feed_package
 
 # Airflow DAG 파일 복사
 COPY airflow/dags /opt/airflow/dags
 
-# 권한 설정
+# 권한 재설정
 USER root
 RUN chown -R airflow:root /opt/airflow/dags
 USER airflow
 
-# PYTHONPATH 설정
-ENV PYTHONPATH=/opt/airflow
-
-# Airflow 설정
-ENV AIRFLOW_HOME=/opt/airflow
-ENV AIRFLOW_CONFIG=/opt/airflow/airflow.cfg
-ENV AIRFLOW_LOG_DIR=/opt/airflow/logs
-ENV AIRFLOW_DAG_DIR=/opt/airflow/dags
-ENV RSS_FEED_HTML_DIR=/opt/airflow/data/html
-
-# ... existing code ...
-RUN mkdir -p /opt/airflow/data/html && \
-    chmod 755 /opt/airflow/data/html
-
-USER root
-RUN mkdir -p /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins /opt/airflow/data/html && \
-    chmod -R 777 /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins /opt/airflow/data/html    
-USER airflow
+# 환경변수는 docker-compose.yml에서 처리합니다
