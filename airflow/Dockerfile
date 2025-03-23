@@ -36,3 +36,8 @@ ENV RSS_FEED_HTML_DIR=/opt/airflow/data/html
 # ... existing code ...
 RUN mkdir -p /opt/airflow/data/html && \
     chmod 755 /opt/airflow/data/html
+
+USER root
+RUN mkdir -p /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins && \
+    chmod -R 777 /opt/airflow/logs
+USER airflow
