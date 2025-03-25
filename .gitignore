@@ -244,3 +244,4 @@ pyrightconfig.json
 airflow/logs/scheduler/latest
 /airflow/logs
 /airflow/logs/scheduler
+/html_parser/html
