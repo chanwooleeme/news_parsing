@@ -65,9 +65,9 @@ class BaseParser(ABC):
         unix_timestamp = dt.timestamp()  # 초 단위 timestamp
         return unix_timestamp
     
+    @abstractmethod
     def get_content(self) -> str:
-        """기사 본문을 반환합니다."""
-        return self.soup.find('div', class_='body').text.strip()
+        pass
     
     def clean_author(self, author: str) -> str:
         if '기자' in author:
