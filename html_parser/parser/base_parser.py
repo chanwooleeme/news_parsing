@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from bs4 import BeautifulSoup
 from datetime import datetime
-from typing import Optional, Dict, Any
 import re
 
 class BaseParser(ABC):
@@ -71,4 +70,6 @@ class BaseParser(ABC):
         return self.soup.find('div', class_='body').text.strip()
     
     def clean_author(self, author: str) -> str:
-        return re.sub(r'\s*기자\s*$', '', author)
+        if '기자' in author:
+            return re.sub(r'\s*기자\s*$', '', author)
+        return author

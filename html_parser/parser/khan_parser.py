@@ -1,5 +1,4 @@
 from .base_parser import BaseParser
-from datetime import datetime
 import re
 
 class KhanParser(BaseParser):
