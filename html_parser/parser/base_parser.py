@@ -44,17 +44,31 @@ class BaseParser(ABC):
         }
     
     def get_title(self) -> str:
-        """기사 제목을 반환합니다."""
-        return self.soup.find('h1', class_='title').text.strip()
+        # 우선 og:title meta 태그에서 제목 추출
+        title = self.extract_meta("og:title")
+        if title:
+            return title
+        # fallback: <title> 태그 사용
+        title_tag = self.soup.find("title")
+        if title_tag:
+            return self.clean_text(title_tag.get_text())
+        return ''
     
     def get_author(self) -> str:
-        """기사 작성자를 반환합니다."""
-        return self.soup.find('span', class_='author').text.strip() 
+        # article:author meta 태그를 우선 사용
+        author = self.extract_meta("article:author")
+        return self.clean_author(author)
     
     def get_publication_date(self) -> str:
-        """기사 발행 날짜를 반환합니다."""
-        return self.soup.find('span', class_='date').text.strip()
+        # article:published_time meta 태그에서 발행일 추출
+        iso_str = self.extract_meta("article:published_time")
+        dt = datetime.fromisoformat(iso_str)
+        unix_timestamp = dt.timestamp()  # 초 단위 timestamp
+        return unix_timestamp
     
     def get_content(self) -> str:
         """기사 본문을 반환합니다."""
         return self.soup.find('div', class_='body').text.strip()
+    
+    def clean_author(self, author: str) -> str:
+        return re.sub(r'\s*기자\s*$', '', author)
