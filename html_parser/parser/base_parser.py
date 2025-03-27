@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from bs4 import BeautifulSoup
 from datetime import datetime
 import re
+import logging
 
 class BaseParser(ABC):
     """HTML 문서 파싱을 위한 기본 파서 클래스"""
@@ -35,12 +36,23 @@ class BaseParser(ABC):
         """
         전체 HTML을 파싱하여 기사 정보를 딕셔너리로 반환.
         """
-        return {
-            'title': self.get_title(),
-            'author': self.get_author(),
-            'publication_date': self.get_publication_date(),
-            'content': self.get_content(),
-        }
+        try:
+            return {
+                'title': self.get_title(),
+                'author': self.get_author(),
+                'publication_date': self.get_publication_date(),
+                'content': self.get_content(),
+            }
+        except Exception as e:
+            logging.error(f"파싱 중 예외 발생: {e}")
+            # 최소한의 정보라도 반환
+            return {
+                'title': self.get_title() or '제목 없음',
+                'author': '',
+                'publication_date': datetime.now().timestamp(),
+                'content': '',
+                'error': str(e)
+            }
     
     def get_title(self) -> str:
         # 우선 og:title meta 태그에서 제목 추출
@@ -60,10 +72,23 @@ class BaseParser(ABC):
     
     def get_publication_date(self) -> str:
         # article:published_time meta 태그에서 발행일 추출
-        iso_str = self.extract_meta("article:published_time")
-        dt = datetime.fromisoformat(iso_str)
-        unix_timestamp = dt.timestamp()  # 초 단위 timestamp
-        return unix_timestamp
+        try:
+            iso_str = self.extract_meta("article:published_time")
+            if not iso_str:
+                # 대안으로 다른 메타 태그 확인
+                iso_str = self.extract_meta("meta:pubdate") or self.extract_meta("pubdate")
+                
+            if not iso_str:
+                # 발행일을 찾을 수 없는 경우 현재 시간 사용
+                return datetime.now().timestamp()
+                
+            dt = datetime.fromisoformat(iso_str)
+            unix_timestamp = dt.timestamp()  # 초 단위 timestamp
+            return unix_timestamp
+        except (ValueError, TypeError) as e:
+            # ISO 형식이 아닌 경우 현재 시간으로 대체
+            logging.error(f"발행일 파싱 오류: {e}")
+            return datetime.now().timestamp()
     
     @abstractmethod
     def get_content(self) -> str:
