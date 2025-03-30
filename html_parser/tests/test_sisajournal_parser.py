@@ -1,5 +1,5 @@
 import pytest
-from parser.sisajournal_parser import SisajournalParser as Parser
+from html_parser.parser.sisajournal_parser import SisajournalParser as Parser
 from datetime import datetime
 from datetime import timezone
 
