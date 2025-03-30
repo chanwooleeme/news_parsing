@@ -11,12 +11,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxslt1-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# 의존성 파일 복사 및 설치
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# 전체 패키지 복사
+COPY . /app/
 
-# 애플리케이션 코드 복사
-COPY . .
+# 패키지 설치
+RUN pip install --upgrade pip && \
+    pip install -e .
 
-# 컨테이너 실행 시 기본 명령 (필요 시 환경변수는 docker run 명령에서 지정)
-CMD ["python", "parser.py"]
+# 컨테이너 실행 시 기본 명령
+CMD ["python", "test_parser.py"]

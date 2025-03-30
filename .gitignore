@@ -245,3 +245,4 @@ airflow/logs/scheduler/latest
 /airflow/logs
 /airflow/logs/scheduler
 /html_parser/html
+/airflow/data/html
