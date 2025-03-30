@@ -12,6 +12,10 @@ RUN apt-get update && \
 COPY feed_package/rss_feed_package /opt/airflow/rss_feed_package
 RUN chown -R airflow:root /opt/airflow/rss_feed_package
 
+# HTML 파서 패키지 설치
+COPY html_parser /opt/airflow/html_parser
+RUN chown -R airflow:root /opt/airflow/html_parser
+
 # 디렉토리 생성 및 권한 설정
 RUN mkdir -p /opt/airflow/data/html /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins && \
     chmod -R 777 /opt/airflow/data /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins
@@ -21,7 +25,9 @@ RUN mkdir -p /opt/airflow/logs/scheduler
 RUN chmod -R 777 /opt/airflow/logs
 
 USER airflow
+# 패키지 설치
 RUN pip install -e /opt/airflow/rss_feed_package
+RUN pip install -e /opt/airflow/html_parser
 
 # Airflow DAG 파일 복사
 COPY airflow/dags /opt/airflow/dags

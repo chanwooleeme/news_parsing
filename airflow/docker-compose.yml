@@ -10,6 +10,7 @@ x-airflow-common: &airflow-common
     - ./plugins:/opt/airflow/plugins
     - ./data:/opt/airflow/data
     - ../feed_package/rss_feed_package:/opt/airflow/rss_feed_package
+    - ../html_parser:/opt/airflow/html_parser
 
 services:
   postgres:
