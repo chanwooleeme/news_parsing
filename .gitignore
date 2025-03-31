@@ -247,3 +247,4 @@ airflow/logs/scheduler/latest
 /html_parser/html
 /airflow/data/html
 /airflow/data
+/indexer/data

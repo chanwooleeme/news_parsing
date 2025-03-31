@@ -1,20 +1,52 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import logging
+import os
+import sys
 from typing import Dict, Type, Optional, Any
 
-from .parser.base_parser import BaseParser
-from .parser.chosun_parser import ChosunParser
-from .parser.newscj_parser import NewscjParser
-from .parser.pressian_parser import PressianParser
-from .parser.womennews_parser import WomennewsParser
-from .parser.ablenews_parser import AblenewsParser
-from .parser.sisajournal_parser import SisajournalParser
-from .parser.segye_parser import SegyeParser
-from .parser.seoul_parser import SeoulParser
-from .parser.mediatoday_parser import MediatodayParser
-from .parser.donga_parser import DongaParser
-from .parser.labortoday_parser import LabortodayParser
-from .parser.khan_parser import KhanParser
-from .parser.newsis_parser import NewsisParser  # 오타 수정됨
+# 현재 디렉토리를 sys.path에 추가하여 상대 경로 import가 로컬에서도 작동하도록 함
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+try:
+    # 패키지로 설치된 경우 (Docker 환경 혹은 pip install -e .)
+    from parser.base_parser import BaseParser
+    from parser.chosun_parser import ChosunParser
+    from parser.newscj_parser import NewscjParser
+    from parser.pressian_parser import PressianParser
+    from parser.womennews_parser import WomennewsParser
+    from parser.ablenews_parser import AblenewsParser
+    from parser.sisajournal_parser import SisajournalParser
+    from parser.segye_parser import SegyeParser
+    from parser.seoul_parser import SeoulParser
+    from parser.mediatoday_parser import MediatodayParser
+    from parser.donga_parser import DongaParser
+    from parser.labortoday_parser import LabortodayParser
+    from parser.khan_parser import KhanParser
+    from parser.newsis_parser import NewsisParser
+except ImportError:
+    # 기존 로직도 유지 (html_parser/parser_factory.py에서 실행될 경우)
+    try:
+        from .parser.base_parser import BaseParser
+        from .parser.chosun_parser import ChosunParser
+        from .parser.newscj_parser import NewscjParser
+        from .parser.pressian_parser import PressianParser
+        from .parser.womennews_parser import WomennewsParser
+        from .parser.ablenews_parser import AblenewsParser
+        from .parser.sisajournal_parser import SisajournalParser
+        from .parser.segye_parser import SegyeParser
+        from .parser.seoul_parser import SeoulParser
+        from .parser.mediatoday_parser import MediatodayParser
+        from .parser.donga_parser import DongaParser
+        from .parser.labortoday_parser import LabortodayParser
+        from .parser.khan_parser import KhanParser
+        from .parser.newsis_parser import NewsisParser
+    except ImportError:
+        print("[ERROR] 파서 모듈을 찾을 수 없습니다. 올바른 경로에서 실행하고 있는지 확인하세요.")
+        sys.exit(1)
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -38,7 +70,7 @@ class ParserFactory:
             '서울신문': SeoulParser,
             '미디어오늘': MediatodayParser,
             '동아일보': DongaParser,
-            '레이버투데이': LabortodayParser,
+            '매일노동뉴스': LabortodayParser,
             '경향신문': KhanParser,
             '뉴시스': NewsisParser
         }

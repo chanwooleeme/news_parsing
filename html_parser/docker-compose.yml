@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  html_parser:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/app
+      - ./html:/app/html
+      - ./output:/app/output
+    environment:
+      - PYTHONPATH=/app
+    command: python test_parser.py
+
+  parser_shell:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/app
+      - ./html:/app/html
+      - ./output:/app/output
+    environment:
+      - PYTHONPATH=/app
+    command: bash
+    tty: true
+    stdin_open: true 
