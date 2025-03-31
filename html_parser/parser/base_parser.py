@@ -32,6 +32,16 @@ class BaseParser(ABC):
             return self.clean_text(tag.get("content"))
         return ''
     
+    def get_category(self) -> str:
+        category = self.extract_meta("article:section")
+        if category:
+            return category
+        else:
+            category = self.extract_meta("Classification")
+            if category:
+                return category
+        return ''
+    
     def parse(self) -> dict:
         """
         전체 HTML을 파싱하여 기사 정보를 딕셔너리로 반환.
@@ -40,6 +50,7 @@ class BaseParser(ABC):
             return {
                 'title': self.get_title(),
                 'author': self.get_author(),
+                'category': self.get_category(),
                 'publication_date': self.get_publication_date(),
                 'content': self.get_content(),
             }
@@ -49,6 +60,7 @@ class BaseParser(ABC):
             return {
                 'title': self.get_title() or '제목 없음',
                 'author': '',
+                'category': '',
                 'publication_date': datetime.now().timestamp(),
                 'content': '',
                 'error': str(e)
