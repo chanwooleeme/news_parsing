@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from bs4 import BeautifulSoup
 from datetime import datetime
 import re
+import hashlib
 import logging
 
 class BaseParser(ABC):
@@ -42,12 +43,22 @@ class BaseParser(ABC):
                 return category
         return ''
     
+    def generate_custom_id(self) -> str:
+        base = (
+            self.get_title() +
+            self.get_author() +
+            str(self.get_publication_date()) +
+            self.get_content()[:300]  # 본문 앞부분만 사용
+            )
+        return hashlib.md5(base.encode("utf-8")).hexdigest()
+    
     def parse(self) -> dict:
         """
         전체 HTML을 파싱하여 기사 정보를 딕셔너리로 반환.
         """
         try:
             return {
+                'custom_id': self.generate_custom_id(),
                 'title': self.get_title(),
                 'author': self.get_author(),
                 'category': self.get_category(),

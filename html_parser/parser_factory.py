@@ -90,6 +90,7 @@ class ParserFactory:
             {
                 'title': 기사 제목,
                 'author': 작성자,
+                'category': 카테고리,
                 'publication_date': 발행일 (타임스탬프),
                 'content': 본문 내용
             }
