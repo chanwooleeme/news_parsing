@@ -159,8 +159,8 @@ class FeedParser:
             for url in urls:
                 # 테스트를 위해 Redis 검사를 우회 (모든 URL을 새 URL로 처리)
                 # 실제 환경에서는 다시 활성화
-                # if self.redis_manager.is_new_url(url):
-                if True:  # 테스트용 우회
+                if self.redis_manager.is_new_url(url):
+                # if True:  # 테스트용 우회
                     html_content = self._download_html(url)
                     if html_content:
                         file_path = self._save_html_locally(url, publisher, html_content)
