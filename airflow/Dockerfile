@@ -19,6 +19,7 @@ RUN chown -R airflow:root /opt/airflow/html_parser
 COPY indexer /opt/airflow/indexer
 RUN chown -R airflow:root /opt/airflow/indexer
 
+
 # 디렉토리 생성 및 권한 설정
 RUN mkdir -p /opt/airflow/data/html /opt/airflow/data/jsonl /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins && \
     chmod -R 777 /opt/airflow/data /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins && \

@@ -52,6 +52,10 @@ services:
       - _AIRFLOW_WWW_USER_LASTNAME=user
       - _AIRFLOW_WWW_USER_EMAIL=admin@example.com
       - _AIRFLOW_WWW_USER_ROLE=Admin
+      - AIRFLOW_CONN_AWS_DEFAULT=aws://${AWS_ACCESS_KEY_ID}:${AWS_SECRET_ACCESS_KEY}@?region_name=${AWS_REGION}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+    env_file:
+      - ./.env
     command: airflow webserver
     depends_on:
       - postgres
@@ -61,6 +65,10 @@ services:
     <<: *airflow-common
     environment:
       - _AIRFLOW_DB_MIGRATE=true
+      - AIRFLOW_CONN_AWS_DEFAULT=aws://${AWS_ACCESS_KEY_ID}:${AWS_SECRET_ACCESS_KEY}@?region_name=${AWS_REGION}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+    env_file:
+      - ./.env
     command: airflow scheduler
     depends_on:
       - airflow-webserver

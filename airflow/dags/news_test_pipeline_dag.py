@@ -1,6 +1,14 @@
 from datetime import datetime, timedelta
+import logging
+import os
+from typing import Dict, Any
+from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+
+
+from airflow.decorators import dag, task
+from airflow import DAG
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
 # RSS 피드 모듈 가져오기
@@ -9,8 +17,27 @@ from rss_feed.feed_parser import FeedParser
 # indexer 모듈 가져오기
 from indexer import NewsIndexer
 
-import logging
-import os
+# 환경 변수 설정
+os.environ["RSS_FEED_HTML_DIR"] = os.getenv("RSS_FEED_HTML_DIR", "/opt/airflow/data/html")
+os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY", "")
+os.environ["QDRANT_HOST"] = os.getenv("QDRANT_HOST", "")
+os.environ["QDRANT_API_KEY"] = os.getenv("QDRANT_API_KEY", "")
+
+# DAG 기본 파라미터
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'start_date': datetime(2024, 1, 1),
+    'email_on_failure': False,
+    'email_on_retry': False,
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
+
+# 테스트 환경 설정
+TARGET_PUBLISHERS = ["경향신문", "뉴시스"]
+MAX_HTML_PER_PUBLISHER = 5
+EXCLUDED_NEWSPAPERS = []  # 테스트에서는 제외 신문사 없음
 
 
 default_args = {
@@ -23,12 +50,15 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-def process_feeds():
-    """RSS 피드를 처리하고 HTML 파일을 수집합니다."""
+def process_feeds_test() -> Dict[str, Any]:
+    """지정된 발행사에서 제한된 수의 HTML 파일을 수집하는 테스트 함수"""
     parser = FeedParser()
-    result = parser.process_feeds()
-    logging.info(f"RSS 피드 처리 완료: {result}")
-    return result
+    parser.process_feeds_for_test(
+        target_publishers=TARGET_PUBLISHERS,
+        max_html_per_publisher=MAX_HTML_PER_PUBLISHER
+    )
+    logging.info(f"테스트 RSS 피드 처리 완료")
+
 
 def index_articles():
     """HTML 파일을 파싱하고 임베딩하여 저장합니다."""
@@ -39,6 +69,11 @@ def index_articles():
 
 
 def upload_and_cleanup_html(html_dir: str, bucket_name: str):
+    print(f"[DEBUG] HTML 폴더에 있는 파일 확인: {html_dir}")
+    for root, _, files in os.walk(html_dir):
+        for file in files:
+            print("    - ", os.path.join(root, file))
+            
     s3 = S3Hook(aws_conn_id="aws_default")
     html_files_uploaded = 0
 
@@ -70,9 +105,9 @@ def upload_and_cleanup_html(html_dir: str, bucket_name: str):
     
 
 with DAG(
-    'news_pipeline_dag',
+    'news_pipeline_dag_test',
     default_args=default_args,
-    description='뉴스 파이프라인: RSS 피드 수집, HTML 파싱 및 임베딩',
+    description='뉴스 파이프라인 테스트',
     schedule_interval=timedelta(hours=1),
     catchup=False,
     tags=['rss', 'html', 'parser', 'news', 'embedding'],
@@ -81,7 +116,7 @@ with DAG(
     # RSS 피드 처리 태스크
     process_feeds_task = PythonOperator(
         task_id='process_feeds',
-        python_callable=process_feeds,
+        python_callable=process_feeds_test,
     )
     
     index_articles_task = PythonOperator(
