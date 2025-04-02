@@ -17,18 +17,32 @@ class RedisManager:
             # 연결 테스트
             self.redis_client.ping()
             logger.info("Redis 연결 성공")
+            self.batch_size = 1000  # 배치 크기 설정
         except Exception as e:
             logger.error(f"Redis 연결 실패: {e}")
     
     def get_all_article_urls(self) -> Set[str]:
         """
-        Redis에서 key_prefix에 해당하는 모든 키를 가져와서, URL 부분만 추출하여 집합으로 반환.
+        SCAN을 사용하여 모든 URL을 배치로 가져오기
         """
-        # Redis의 KEYS 명령은 프로덕션에서는 성능 이슈가 있을 수 있으나,
-        # 4천개 정도라면 문제 없을 것으로 예상됨.
-        keys = self.redis_client.keys(self.key_prefix + "*")
-        # 각 키에서 접두사를 제거하고 실제 URL만 추출
-        urls = {key[len(self.key_prefix):] for key in keys}
+        urls = set()
+        cursor = 0
+        pattern = self.key_prefix + "*"
+        
+        while True:
+            cursor, keys = self.redis_client.scan(
+                cursor=cursor, 
+                match=pattern, 
+                count=self.batch_size
+            )
+            
+            # URL 추출 (접두사 제거)
+            urls.update(key[len(self.key_prefix):] for key in keys)
+            
+            # 모든 키를 순회했으면 종료
+            if cursor == 0:
+                break
+                
         return urls
     
     
@@ -41,7 +55,32 @@ class RedisManager:
         self.redis_client.set(key, publisher)
 
     def store_articles(self, articles: Dict[str, List[str]]) -> None:
-        """여러 기사를 redis에 저장"""
+        """여러 기사를 redis에 일괄 저장"""
+        pipe = self.redis_client.pipeline()
+        
         for publisher, urls in articles.items():
             for url in urls:
-                self._store_article(url, publisher)
+                key = self.key_prefix + url
+                pipe.set(key, publisher)
+        
+        pipe.execute()
+
+    def is_articles_processed(self, urls: List[str]) -> Dict[str, bool]:
+        """
+        여러 URL들의 처리 여부를 한 번에 확인
+        
+        Args:
+            urls: 확인할 URL 리스트
+            
+        Returns:
+            Dict[str, bool]: URL별 처리 여부 (True: 처리됨, False: 미처리)
+        """
+        pipe = self.redis_client.pipeline()
+        keys = [self.key_prefix + url for url in urls]
+        
+        # EXISTS 명령어를 파이프라인으로 한 번에 실행
+        for key in keys:
+            pipe.exists(key)
+        
+        results = pipe.execute()
+        return dict(zip(urls, results))

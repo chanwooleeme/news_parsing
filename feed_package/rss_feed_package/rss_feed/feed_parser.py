@@ -135,88 +135,180 @@ class FeedParser:
         if not new_articles:
             logger.info("새로운 기사가 없어 추가 처리를 건너뜁니다.")
             return
-
-        logger.info("새로운 기사에 대한 추가 처리 시작")
-        # TODO: parse_html 구현
-        # TODO: embedding 구현
-        # TODO: vector store 저장 구현
         logger.info("추가 처리 완료")
 
-    def process_feeds(self) -> None:
-        """메인 처리 함수"""
-        # 1. RSS 피드에서 기사 링크 수집
-        article_urls_dict = self._get_article_links_from_rss_xmls()
-        if not article_urls_dict:
-            logger.error("기사 링크 수집 실패")
-            return
-
-        # 2. 새로운 기사 다운로드 및 S3 업로드
-        new_articles = {}
-        for publisher, urls in article_urls_dict.items():
-            new_urls = []
-            logger.info(f"\n{publisher} 처리 시작: {len(urls)} 기사")
-            
-            for url in urls:
-                # 테스트를 위해 Redis 검사를 우회 (모든 URL을 새 URL로 처리)
-                # 실제 환경에서는 다시 활성화
-                if self.redis_manager.is_new_url(url):
-                # if True:  # 테스트용 우회
-                    html_content = self._download_html(url)
-                    if html_content:
-                        file_path = self._save_html_locally(url, publisher, html_content)
-                        if file_path:
-                            new_urls.append(url)
-            
-            if new_urls:
-                new_articles[publisher] = new_urls
-                logger.info(f"{publisher}: {len(new_urls)}개 새로운 기사 처리 완료")
-            else:
-                logger.info(f"{publisher}: 새로운 기사 없음")
-
-        # 3. 새로운 기사에 대한 추가 처리
-        self._process_new_articles(new_articles)
-
-    def process_feeds_for_test(self, target_publishers: List[str] = ["경향신문", "뉴시스"], max_html_per_publisher: int = 5) -> None:
-        """테스트용 처리 함수: 특정 발행사에서 제한된 수의 기사만 처리
+    def _process_publisher_articles(self, publisher: str, urls: List[str], max_articles: Optional[int] = None) -> List[str]:
+        """단일 발행사의 기사들을 처리
         
         Args:
-            target_publishers: 처리할 발행사 목록 (기본값: 경향신문, 뉴시스)
-            max_html_per_publisher: 각 발행사별 최대 처리 HTML 수 (기본값: 5)
+            publisher: 발행사 이름
+            urls: 처리할 URL 목록
+            max_articles: 최대 처리할 기사 수 (None이면 전체 처리)
+            
+        Returns:
+            처리된 새로운 URL 목록
         """
-        # 1. RSS 피드에서 기사 링크 수집
-        article_urls_dict = self._get_article_links_from_rss_xmls_for_test()
-        if not article_urls_dict:
+        target_urls = urls[:max_articles] if max_articles else urls
+        logger.info(f"{publisher} 처리 시작: {len(target_urls)} 기사")
+        
+        # Redis에서 URL 처리 여부 확인
+        processed_status = self.redis_manager.is_articles_processed(target_urls)
+        new_urls = []
+        
+        for url, is_processed in processed_status.items():
+            if not is_processed:
+                if self._download_and_save_article(url, publisher):
+                    new_urls.append(url)
+                    
+        if new_urls:
+            logger.info(f"{publisher}: {len(new_urls)}개 새로운 기사 처리 완료")
+        else:
+            logger.info(f"{publisher}: 새로운 기사 없음")
+            
+        return new_urls
+
+    def _download_and_save_article(self, url: str, publisher: str) -> bool:
+        """단일 기사 다운로드 및 저장
+        
+        Returns:
+            bool: 성공 여부
+        """
+        html_content = self._download_html(url)
+        if html_content:
+            file_path = self._save_html_locally(url, publisher, html_content)
+            if file_path:
+                logger.info(f"처리 완료: {url}")
+                return True
+        return False
+
+    def _collect_and_process_articles(self, 
+                                    urls_dict: Dict[str, List[str]], 
+                                    target_publishers: Optional[List[str]] = None,
+                                    max_per_publisher: Optional[int] = None) -> Dict[str, List[str]]:
+        """기사 수집 및 처리 메인 로직
+        
+        Args:
+            urls_dict: 발행사별 URL 딕셔너리
+            target_publishers: 처리할 발행사 목록 (None이면 전체 처리)
+            max_per_publisher: 발행사당 최대 처리 기사 수 (None이면 제한 없음)
+        """
+        # 발행사 필터링
+        if target_publishers:
+            urls_dict = {k: v for k, v in urls_dict.items() if k in target_publishers}
+            
+        new_articles = {}
+        for publisher, urls in urls_dict.items():
+            new_urls = self._process_publisher_articles(
+                publisher=publisher,
+                urls=urls,
+                max_articles=max_per_publisher
+            )
+            if new_urls:
+                new_articles[publisher] = new_urls
+                
+        # 새로운 기사 Redis에 저장
+        if new_articles:
+            self.redis_manager.store_articles(new_articles)
+            
+        return new_articles
+
+    def process_feeds(self) -> None:
+        """전체 기사 처리 파이프라인"""
+        # 1. RSS 피드에서 URL 수집
+        urls_by_publisher = self._get_article_links_from_rss_xmls()
+        if not urls_by_publisher:
+            logger.error("기사 링크 수집 실패")
+            return
+        logger.info(f"1단계 완료: {len(urls_by_publisher)}개 발행사의 URL 수집")
+
+        # 2. Redis에서 새로운 URL 필터링
+        new_urls_by_publisher = self._filter_new_urls(urls_by_publisher)
+        if not new_urls_by_publisher:
+            logger.info("2단계 완료: 새로운 URL 없음")
+            return
+        logger.info(f"2단계 완료: {sum(len(urls) for urls in new_urls_by_publisher.values())}개의 새 URL 발견")
+
+        # 3. HTML 다운로드 및 로컬 저장
+        downloaded_articles = self._download_and_save_articles(new_urls_by_publisher)
+        if not downloaded_articles:
+            logger.error("3단계 완료: 다운로드 실패")
+            return
+        logger.info(f"3단계 완료: {sum(len(urls) for urls in downloaded_articles.values())}개 기사 저장")
+
+        # 4. Redis에 처리 완료 표시
+        self._mark_articles_as_processed(downloaded_articles)
+        logger.info("4단계 완료: Redis 업데이트")
+
+        # 5. 추가 처리 (임베딩, 벡터 저장 등)
+        self._process_new_articles(downloaded_articles)
+        logger.info("5단계 완료: 추가 처리 완료")
+
+    def _filter_new_urls(self, urls_by_publisher: Dict[str, List[str]]) -> Dict[str, List[str]]:
+        """Redis 체크를 통해 새로운 URL만 필터링"""
+        new_urls_by_publisher = {}
+        
+        for publisher, urls in urls_by_publisher.items():
+            processed_status = self.redis_manager.is_articles_processed(urls)
+            new_urls = [url for url, is_processed in processed_status.items() 
+                       if not is_processed]
+            
+            if new_urls:
+                new_urls_by_publisher[publisher] = new_urls
+                logger.info(f"- {publisher}: {len(new_urls)}/{len(urls)} 새로운 URL")
+                
+        return new_urls_by_publisher
+
+    def _download_and_save_articles(self, urls_by_publisher: Dict[str, List[str]]) -> Dict[str, List[str]]:
+        """HTML 다운로드 및 로컬 저장"""
+        downloaded_articles = {}
+        
+        for publisher, urls in urls_by_publisher.items():
+            successful_urls = []
+            logger.info(f"- {publisher} 다운로드 시작: {len(urls)}개 URL")
+            
+            for url in urls:
+                if self._download_and_save_article(url, publisher):
+                    successful_urls.append(url)
+                    
+            if successful_urls:
+                downloaded_articles[publisher] = successful_urls
+                logger.info(f"- {publisher} 완료: {len(successful_urls)}/{len(urls)} 성공")
+                
+        return downloaded_articles
+
+    def _mark_articles_as_processed(self, articles_by_publisher: Dict[str, List[str]]) -> None:
+        """처리 완료된 기사를 Redis에 표시"""
+        self.redis_manager.store_articles(articles_by_publisher)
+
+    def process_feeds_for_test(self, 
+                             target_publishers: List[str] = ["경향신문", "뉴시스"], 
+                             max_html_per_publisher: int = 5) -> None:
+        """테스트용 기사 처리 파이프라인"""
+        # 1. 테스트용 RSS 피드에서 URL 수집 (제한된 수만)
+        urls_by_publisher = self._get_article_links_from_rss_xmls_for_test()
+        if not urls_by_publisher:
             logger.error("기사 링크 수집 실패")
             return
 
-        # 2. 특정 발행사에서만 제한된 수의 기사 다운로드
-        new_articles = {}
-        
-        # 지정한 발행사만 처리
-        filtered_publishers = {k: v for k, v in article_urls_dict.items() 
-                              if k in target_publishers}
-        
-        for publisher, urls in filtered_publishers.items():
-            new_urls = []
-            logger.info(f"\n{publisher} 처리 시작: 최대 {max_html_per_publisher}개 기사 처리 예정")
-            
-            # 각 발행사별 최대 HTML 수 제한
-            for url in urls[:max_html_per_publisher]:
-                html_content = self._download_html(url)
-                if html_content:
-                    file_path = self._save_html_locally(url, publisher, html_content)
-                    if file_path:
-                        new_urls.append(url)
-                        logger.info(f"처리 완료 ({len(new_urls)}/{max_html_per_publisher}): {url}")
-            
-            if new_urls:
-                new_articles[publisher] = new_urls
-                logger.info(f"{publisher}: {len(new_urls)}개 기사 처리 완료")
-            else:
-                logger.info(f"{publisher}: 처리된 기사 없음")
+        # 2. 지정된 발행사만 필터링 & URL 수 제한
+        filtered_urls = {
+            publisher: urls[:max_html_per_publisher]
+            for publisher, urls in urls_by_publisher.items()
+            if publisher in target_publishers
+        }
+        logger.info(f"1단계 완료: {len(filtered_urls)}개 발행사 선택")
 
-        # 3. 새로운 기사에 대한 추가 처리
-        self._process_new_articles(new_articles)
+        # 3~5. 실제 처리 파이프라인과 동일
+        new_urls_by_publisher = self._filter_new_urls(filtered_urls)
+        if not new_urls_by_publisher:
+            return
+
+        downloaded_articles = self._download_and_save_articles(new_urls_by_publisher)
+        if not downloaded_articles:
+            return
+
+        self._mark_articles_as_processed(downloaded_articles)
+        self._process_new_articles(downloaded_articles)
 
 def main():
     parser = FeedParser()
