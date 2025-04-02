@@ -55,15 +55,21 @@ class RedisManager:
         self.redis_client.set(key, publisher)
 
     def store_articles(self, articles: Dict[str, List[str]]) -> None:
-        """여러 기사를 redis에 일괄 저장"""
-        pipe = self.redis_client.pipeline()
+        """
+        여러 기사를 redis에 일괄 저장
+        TTL: 3일 (259,200초)
+        """
+        TTL_SECONDS = 3 * 24 * 3600  # 3일
         
+        pipe = self.redis_client.pipeline()
         for publisher, urls in articles.items():
             for url in urls:
                 key = self.key_prefix + url
                 pipe.set(key, publisher)
+                pipe.expire(key, TTL_SECONDS)
         
         pipe.execute()
+        logger.info(f"Redis에 {sum(len(urls) for urls in articles.values())}개 URL 저장 (TTL: 3일)")
 
     def is_articles_processed(self, urls: List[str]) -> Dict[str, bool]:
         """
