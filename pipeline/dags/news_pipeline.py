@@ -8,7 +8,7 @@ from tasks.download_html_task import download_html_task
 from tasks.parse_articles_task import parse_and_save_articles_task
 from tasks.embed_and_search_task import embed_and_search_task
 from tasks.analyze_article_task import analyze_article_task
-from tasks.save_analysis_task import save_analysis_task
+from tasks.save_analysis_article_task import save_analysis_task
 
 # 경로 세팅 (환경변수 읽거나, 직접 지정)
 HTML_DIR = os.getenv("HTML_FILES_DIR", "/opt/airflow/data/html_files")

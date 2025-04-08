@@ -1,6 +1,6 @@
 from common.redis_manager import RedisManager
-from html_downloader.html_downloader.download import HtmlDownloader, HtmlDownloaderConfig
-from airflow.common.file import read_json_file
+from html_downloader.download import HtmlDownloader, HtmlDownloaderConfig
+from utils.file import read_json_file
 
 def download_html_task(html_download_dir: str, rss_source_file: str):
     redis_manager = RedisManager()

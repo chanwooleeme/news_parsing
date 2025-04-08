@@ -4,17 +4,17 @@ import redis
 import os
 from typing import List, Dict, Optional
 from common.logger import get_logger
-
+from common.config import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
 logger = get_logger(__name__)
 
 class RedisManager:
     def __init__(self):
         try:
             self.redis_client = redis.Redis(
-                host=os.getenv('REDIS_HOST', 'localhost'),
-                port=int(os.getenv('REDIS_PORT', 6379)),
+                host=REDIS_HOST,
+                port=REDIS_PORT,
                 decode_responses=True,
-                password=os.getenv('REDIS_PASSWORD', '')
+                password=REDIS_PASSWORD
             )
             self.redis_client.ping()  # ✅ 이거 꼭 넣어야함
             self.batch_size = 1000

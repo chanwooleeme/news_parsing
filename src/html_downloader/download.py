@@ -1,12 +1,10 @@
-# html_downloader/downloader.py
-
 import os
 import hashlib
 import feedparser
 import requests
 from typing import Dict, List, Optional
 from common.logger import get_logger
-from html_downloader.article_store import ArticleStore  # ✅ RedisManager가 아니라 ArticleStore 사용
+from .article_store import ArticleStore  # ✅ RedisManager가 아니라 ArticleStore 사용
 from common.redis_manager import RedisManager  # 주입받을 RedisManager
 
 logger = get_logger(__name__)

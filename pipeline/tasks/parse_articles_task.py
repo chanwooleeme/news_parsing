@@ -1,5 +1,5 @@
 from html_parser.parser_factory import ParserFactory
-from airflow.common.file import list_files, list_directories, join_path, splitext_filename, read_text_file, save_dict_as_json
+from utils.file import list_files, list_directories, join_path, splitext_filename, read_text_file, save_dict_as_json
 
 def parse_and_save_articles_task(html_base_dir: str, parsed_base_dir: str) -> None:
     parser_factory = ParserFactory()

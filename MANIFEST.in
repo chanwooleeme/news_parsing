@@ -1,4 +1,0 @@
-include README.md
-include LICENSE
-include rss_feed_package/rss_feed/data/news_file.json
-recursive-include rss_feed_package/rss_feed/data *.json 

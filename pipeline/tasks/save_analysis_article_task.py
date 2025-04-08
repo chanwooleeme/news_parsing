@@ -1,6 +1,6 @@
 import os
 from typing import List, Dict
-from common.file_utils import save_dict_as_json, make_directory
+from utils.file import save_dict_as_json, make_directory
 from common.logger import get_logger
 
 logger = get_logger(__name__)
