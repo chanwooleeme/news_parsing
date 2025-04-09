@@ -9,6 +9,8 @@ from tasks.parse_articles_task import parse_and_save_articles_task
 from tasks.embed_and_search_task import embed_and_search_task
 from tasks.analyze_article_task import analyze_article_task
 from tasks.save_analysis_article_task import save_analysis_task
+from tasks.s3_upload_task import s3_upload_task
+from tasks.delete_html_task import delete_html_task
 
 # 경로 세팅 (환경변수 읽거나, 직접 지정)
 HTML_DIR = os.getenv("HTML_FILES_DIR", "/opt/airflow/data/html_files")
@@ -64,11 +66,25 @@ with DAG(
             save_base_dir=ANALYSIS_DIR
         )
 
+    @task
+    def upload_to_s3():
+        s3_upload_task(
+            html_dir=HTML_DIR
+        )
+
+    @task
+    def delete_html():
+        delete_html_task(
+            html_dir=HTML_DIR
+        )
+
     # 👉 DAG Task Dependency
     download = download_html()
     parsed = parse_articles()
     embedded = embed_and_search()
     analyzed = analyze_articles(embedded)
     saved = save_analysis(analyzed)
+    uploaded = upload_to_s3()
+    deleted = delete_html()
 
-    download >> parsed >> embedded >> analyzed >> saved
+    download >> parsed >> embedded >> analyzed >> saved >> uploaded >> deleted

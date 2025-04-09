@@ -1,5 +1,5 @@
 from typing import List, Dict
-from nli.classifier import NLIClassifier
+from semantic_engine.nli_classifier import NLIClassifier
 from common.logger import get_logger
 
 logger = get_logger(__name__)

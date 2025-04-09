@@ -4,8 +4,8 @@ from utils.file import (
     list_files,
     join_path,
 )
-from indexer.embedder import NewsEmbedder
-from retriever.retriever import NewsRetriever
+from semantic_engine.embedder import NewsEmbedder
+from semantic_engine.vector_store import QdrantVectorStore
 from common.logger import get_logger
 from typing import List, Dict
 
@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 
 def embed_and_search_task(parsed_base_dir: str, top_k: int = 5) -> List[Dict]:
     embedder = NewsEmbedder()
-    retriever = NewsRetriever(embedder=embedder)
+    vector_store = QdrantVectorStore()
     results = []
 
     for newspaper in list_directories(parsed_base_dir):
@@ -31,11 +31,14 @@ def embed_and_search_task(parsed_base_dir: str, top_k: int = 5) -> List[Dict]:
 
                 embedding = embedder.embed_text(content)
 
-                search_results = retriever.search(
+                search_results = vector_store.search(
                     query=content,
                     top_k=top_k
                 )
-
+                vector_store.save(
+                    embedding=embedding,
+                    metadata=article
+                )
                 results.append({
                     "new_article": article,
                     "embedding": embedding,
