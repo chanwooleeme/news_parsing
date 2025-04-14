@@ -245,3 +245,5 @@ pyrightconfig.json
 *.html
 /data
 /logs
+/.cursor
+/.vcsode

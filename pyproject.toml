@@ -26,3 +26,7 @@ where = ["src"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+
+[tool.pyright]
+include = ["pipeline"]
+extraPaths = ["/Users/lee/Desktop/news_parsing/pipeline"]

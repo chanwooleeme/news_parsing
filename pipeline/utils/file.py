@@ -2,9 +2,17 @@ from typing import List, Dict, Any
 import json
 import os
 
+
+def ensure_directory_exists(path: str) -> None:
+    os.makedirs(path, exist_ok=True)
+
 def read_json_file(file_path: str) -> List[str]:
     with open(file_path, 'r') as file:
         return json.load(file)
+
+def write_json_file(data: List[str], file_path: str) -> None:
+    with open(file_path, 'w') as file:
+        json.dump(data, file, ensure_ascii=False, indent=2)
 
 def list_directories(path: str) -> list:
     """폴더 안의 모든 디렉토리 이름 리턴"""
@@ -26,8 +34,10 @@ def splitext_filename(filename: str) -> str:
     return os.path.splitext(filename)[0]
 
 def read_text_file(filepath: str, encoding: str = "utf-8") -> str:
-    with open(filepath, "r", encoding=encoding) as f:
-        return f.read()
+    with open(filepath, 'rb') as file:
+        content = file.read()
+    # 에러 무시하고 디코딩 ('replace'는 잘못된 문자를 ''로 대체)
+    return content.decode(encoding, errors='replace')
 
 def save_dict_as_json(data: dict, save_dir: str, filename: str) -> None:
     os.makedirs(save_dir, exist_ok=True)

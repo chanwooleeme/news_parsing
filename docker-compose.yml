@@ -29,6 +29,8 @@ services:
     build: .
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
       - _AIRFLOW_DB_MIGRATE=true
       - _AIRFLOW_WWW_USER_CREATE=true
@@ -45,9 +47,17 @@ services:
       - AIRFLOW__WEBSERVER__SECRET_KEY=news_pipeline_secret_key
       - PYTHONPATH=/opt/airflow
       - AIRFLOW__LOGGING__BASE_LOG_FOLDER=/opt/airflow/logs
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - IS_DOCKER=true
     volumes:
       - ./data:/opt/airflow/data
       - ./logs:/opt/airflow/logs
+      - ./pipeline/dags:/opt/airflow/dags
+      - ./pipeline/tasks:/opt/airflow/tasks
+      - ./pipeline/utils:/opt/airflow/utils
     depends_on:
       - postgres
       - redis
@@ -56,6 +66,8 @@ services:
 
   airflow-scheduler:
     build: .
+    env_file:
+      - .env
     environment:
       - _AIRFLOW_DB_MIGRATE=true
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
@@ -65,9 +77,17 @@ services:
       - AIRFLOW__WEBSERVER__SECRET_KEY=news_pipeline_secret_key
       - PYTHONPATH=/opt/airflow
       - AIRFLOW__LOGGING__BASE_LOG_FOLDER=/opt/airflow/logs
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - IS_DOCKER=true
     volumes:
       - ./data:/opt/airflow/data
       - ./logs:/opt/airflow/logs
+      - ./pipeline/dags:/opt/airflow/dags
+      - ./pipeline/tasks:/opt/airflow/tasks
+      - ./pipeline/utils:/opt/airflow/utils
     depends_on:
       - airflow-webserver
     restart: always
@@ -75,6 +95,8 @@ services:
 
   airflow-worker:
     build: .
+    env_file:
+      - .env
     environment:
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
@@ -83,9 +105,17 @@ services:
       - AIRFLOW__WEBSERVER__SECRET_KEY=news_pipeline_secret_key
       - PYTHONPATH=/opt/airflow
       - AIRFLOW__LOGGING__BASE_LOG_FOLDER=/opt/airflow/logs
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      - IS_DOCKER=true
     volumes:
       - ./data:/opt/airflow/data
       - ./logs:/opt/airflow/logs
+      - ./pipeline/dags:/opt/airflow/dags
+      - ./pipeline/tasks:/opt/airflow/tasks
+      - ./pipeline/utils:/opt/airflow/utils
     depends_on:
       - airflow-scheduler
       - redis

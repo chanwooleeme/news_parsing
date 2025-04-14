@@ -25,4 +25,16 @@ class NewsisParser(BaseParser):
                     break
                 if text:
                     sentences.append(text)
-        return " ".join(sentences)
+        return self.cleanse_content(" ".join(sentences))
+    
+
+    def cleanse_content(self, content: str) -> str:
+        pattern = r'^\s*\"?\s*\[[^\]]+\]\s*[가-힣\s]+기자\s*=\s*'
+    
+        # 해당 패턴을 찾아 제거
+        cleaned_text = re.sub(pattern, "", content)
+    
+        # 혹시 남아있을 수 있는 선행 따옴표 제거 (양쪽 공백과 함께)
+        cleaned_text = cleaned_text.lstrip('\"').strip()
+    
+        return cleaned_text

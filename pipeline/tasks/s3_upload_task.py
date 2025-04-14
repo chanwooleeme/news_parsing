@@ -1,4 +1,4 @@
-from src.common.logger import get_logger
+from logger import get_logger
 from utils.file import list_files, join_path, list_directories
 import os
 import boto3
@@ -65,5 +65,5 @@ def s3_upload_task(html_dir: str):
 
 if __name__ == "__main__":
     # 환경 변수에서 HTML 디렉토리 경로를 가져오거나 기본값 사용
-    html_dir = os.getenv("HTML_DOWNLOAD_DIR", "data/html_files")
+    html_dir = os.getenv("HTML_DOWNLOAD_DIR", "/Users/lee/Desktop/news_parsing/pipeline/tasks/html_files")
     s3_upload_task(html_dir=html_dir)

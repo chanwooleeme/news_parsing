@@ -2,24 +2,35 @@ import os
 import hashlib
 import feedparser
 import requests
+import sys
 from typing import Dict, List, Optional
-from common.logger import get_logger
-from .article_store import ArticleStore  # ✅ RedisManager가 아니라 ArticleStore 사용
-from common.redis_manager import RedisManager  # 주입받을 RedisManager
+from logger import get_logger
+from .article_store import ArticleStore
+from html_downloader.redis_manager import RedisManager
+from redis import Redis
 
-logger = get_logger(__name__)
-
+logger = get_logger("html_downloader")
 
 class HtmlDownloaderConfig:
-    def __init__(self, html_dir: str, ttl_seconds: int = 3 * 24 * 3600):
+    def __init__(self, html_dir: str, redis_client: Redis, ttl_seconds: int = 3 * 24 * 3600):
         self.html_dir = html_dir
         self.ttl_seconds = ttl_seconds  # TTL 기본값은 3일
-
+        
+        # Redis 연결 시도
+        try:
+            self.redis = redis_client
+            # 연결 테스트
+            self.redis.ping()
+            logger.info("✅ Redis 연결 성공")
+        except Exception as e:
+            logger.error(f"❌ Redis 연결 실패: {e}")
+            sys.exit(1)  # Redis 연결 실패 시 프로그램 종료
 
 class HtmlDownloader:
-    def __init__(self, config: HtmlDownloaderConfig, redis_manager: RedisManager):
+    def __init__(self, config: HtmlDownloaderConfig):
         self.config = config
-        self.article_store = ArticleStore(redis_manager)  # ✅ RedisManager가 아니라 ArticleStore로 감쌈
+        redis_manager = RedisManager(config.redis)
+        self.article_store = ArticleStore(redis_manager)
 
     @staticmethod
     def _generate_filename(url: str) -> str:
@@ -100,9 +111,3 @@ class HtmlDownloader:
             logger.info(f"📄 {publisher}: {len(links)}개 기사 수집")
 
         return article_links
-
-# if __name__ == "__main__":
-#     config = HtmlDownloaderConfig(html_dir="html_files")
-#     redis_manager = RedisManager()
-#     downloader = HtmlDownloader(config, redis_manager)
-#     downloader.download_articles(rss_links_by_publisher)

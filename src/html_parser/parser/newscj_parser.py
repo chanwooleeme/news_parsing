@@ -34,7 +34,7 @@ class NewscjParser(BaseParser):
                 if paragraphs:
                     # 본문 내용 수집
                     content = '\n\n'.join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
-                    return self.clean_text(content)
+                    return self.clean_article_text(self.clean_text(content))
             
             # 대안: 모든 <p> 태그 선택
             paragraphs = self.soup.select('p')
@@ -49,7 +49,12 @@ class NewscjParser(BaseParser):
             # 연속된 공백 및 개행 정리
             content = re.sub(r'\s+', ' ', content)
             
-            return self.clean_text(content)
+            return self.clean_article_text(self.clean_text(content))
         except Exception as e:
             logging.error(f"본문 추출 중 오류 발생: {e}")
             return ""
+        
+    def clean_article_text(self, text: str) -> str:
+        pattern = r"^\s*\[[^\]]+\]\s*"
+        cleaned_text = re.sub(pattern, "", text)
+        return cleaned_text.strip()

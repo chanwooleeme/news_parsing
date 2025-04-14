@@ -5,18 +5,22 @@ from datetime import timedelta
 import os
 
 from tasks.download_html_task import download_html_task
-from tasks.parse_articles_task import parse_and_save_articles_task
-from tasks.embed_and_search_task import embed_and_search_task
-from tasks.analyze_article_task import analyze_article_task
-from tasks.save_analysis_article_task import save_analysis_task
+from tasks.parse_filtered_articles_task import parse_and_save_articles_task
+from tasks.embed_and_save_task import embed_and_save_task
 from tasks.s3_upload_task import s3_upload_task
-from tasks.delete_html_task import delete_html_task
+from tasks.delete_file_task import delete_file_task
 
 # 경로 세팅 (환경변수 읽거나, 직접 지정)
-HTML_DIR = os.getenv("HTML_FILES_DIR", "/opt/airflow/data/html_files")
-PARSED_DIR = os.getenv("PARSED_FILES_DIR", "/opt/airflow/data/parsed_articles")
-ANALYSIS_DIR = os.getenv("ANALYSIS_FILES_DIR", "/opt/airflow/data/analysis_results")
-RSS_SOURCE_FILE = os.getenv("RSS_SOURCE_FILE", "/opt/airflow/data/news_file.json")
+BASE_DATA_DIR = os.getenv("BASE_DATA_DIR", "/opt/airflow/data")
+HTML_DIR = os.path.join(BASE_DATA_DIR, "html_files")
+PARSED_DIR = os.path.join(BASE_DATA_DIR, "parsed_articles")
+RSS_SOURCE_FILE = os.getenv("RSS_SOURCE_FILE", "/opt/airflow/data/economy.json")
+
+# 각 실행별 고유 경로 생성 함수
+def get_run_specific_path(base_dir, run_id):
+    """각 DAG 실행별 고유 경로 생성"""
+    return os.path.join(base_dir, f"run_{run_id}")
+
 default_args = {
     'owner': 'airflow',
     'retries': 1,
@@ -29,62 +33,64 @@ with DAG(
     start_date=days_ago(1),
     schedule_interval='@hourly',  # 1시간마다
     catchup=False,
-    tags=['news', 'pipeline']
+    tags=['news', 'pipeline'],
 ) as dag:
 
     @task
-    def download_html():
+    def download(**context):
+        # 실행별 고유 디렉토리 사용
+        run_id = context['run_id'] 
+        html_run_dir = get_run_specific_path(HTML_DIR, run_id)
+        
         download_html_task(
-            html_download_dir=HTML_DIR,
-            rss_source_file=RSS_SOURCE_FILE
+            html_download_dir=html_run_dir,
+            rss_source_file=RSS_SOURCE_FILE,
         )
+        
+        # 다음 태스크에서 사용할 수 있도록 HTML 디렉토리 경로 반환
+        return html_run_dir
 
     @task
-    def parse_articles():
-        parse_and_save_articles_task(
-            html_base_dir=HTML_DIR,
-            parsed_base_dir=PARSED_DIR
+    def parse(html_dir, **context):
+        # 실행별 고유 디렉토리 사용
+        run_id = context['run_id']
+        parsed_run_dir = get_run_specific_path(PARSED_DIR, run_id)
+        
+        parse_and_save_articles_task(   
+            html_base_dir=html_dir,
+            parsed_base_dir=parsed_run_dir
         )
+        
+        # 다음 태스크에서 사용할 수 있도록 경로 반환
+        return parsed_run_dir
 
     @task
-    def embed_and_search():
-        return embed_and_search_task(
-            parsed_base_dir=PARSED_DIR,
-            top_k=5
-        )
+    def embed(parsed_dir):
+        # 임베딩 생성 및 바로 Qdrant에 저장
+        count = embed_and_save_task(parsed_base_dir=parsed_dir)
+        return count
 
     @task
-    def analyze_articles(results: list):
-        return analyze_article_task(
-            results=results
-        )
+    def upload_to_s3(html_dir):
+        s3_upload_task(html_dir=html_dir)
+        return html_dir
 
     @task
-    def save_analysis(analyzed_results: list):
-        save_analysis_task(
-            analyzed_results=analyzed_results,
-            save_base_dir=ANALYSIS_DIR
-        )
+    def delete_file(html_dir, parsed_dir):
+        delete_file_task(html_dir=html_dir, parsed_news_dir=parsed_dir)
 
-    @task
-    def upload_to_s3():
-        s3_upload_task(
-            html_dir=HTML_DIR
-        )
+    # 태스크 호출 및 의존성 설정
+    html_dir = download()
+    parsed_dir = parse(html_dir)
+    embed_result = embed(parsed_dir)
+    upload_result = upload_to_s3(html_dir)
+    delete_result = delete_file(html_dir=html_dir, parsed_dir=parsed_dir)
+    
+    # 태스크 간 의존성 설정
+    html_dir >> parsed_dir >> embed_result
 
-    @task
-    def delete_html():
-        delete_html_task(
-            html_dir=HTML_DIR
-        )
+    # 2. upload는 download 후 언제든 가능
+    html_dir >> upload_result
 
-    # 👉 DAG Task Dependency
-    download = download_html()
-    parsed = parse_articles()
-    embedded = embed_and_search()
-    analyzed = analyze_articles(embedded)
-    saved = save_analysis(analyzed)
-    uploaded = upload_to_s3()
-    deleted = delete_html()
-
-    download >> parsed >> embedded >> analyzed >> saved >> uploaded >> deleted
+    # 3. delete는 모든 작업이 완료된 후에만 실행
+    [upload_result, embed_result] >> delete_result

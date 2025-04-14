@@ -1,8 +1,8 @@
 from typing import Dict, List, Set
-from common.redis_manager import RedisManager
-from common.logger import get_logger
+from .redis_manager import RedisManager
+from logger import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger("article_store")
 
 class ArticleStore:
     def __init__(self, redis_manager: RedisManager):
@@ -32,3 +32,4 @@ class ArticleStore:
         keys = [self._format_key(url) for url in urls]
         exists_results = self.redis_manager.exists_keys(keys)
         return dict(zip(urls, exists_results))
+

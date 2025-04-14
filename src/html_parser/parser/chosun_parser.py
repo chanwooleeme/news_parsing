@@ -4,7 +4,7 @@ import json
 import logging
 from typing import Tuple, Optional
 from datetime import datetime
-
+import html
 class ChosunParser(BaseParser):
     def __init__(self, html: str):
         super().__init__(html)
@@ -40,12 +40,31 @@ class ChosunParser(BaseParser):
                 paragraphs = content_container.select("p")
                 if paragraphs:
                     content = " ".join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
-                    return self._clean_body(content)
+                    return self.clean_article_text(self._clean_body(content))
             
             return ""
         except Exception as e:
             logging.error(f"본문 추출 오류: {e}")
             return ""
+
+    def clean_article_text(text: str) -> str:
+        # 1. HTML 태그 제거 (예: <b>, <i> 등)
+        text = re.sub(r"<[^>]+>", "", text)
+        
+        # 2. HTML 엔티티 변환 (예: &amp; -> &)
+        text = html.unescape(text)
+        
+        # 3. 대괄호로 감싸진 메타 정보 제거 (예: [편집자 주], [땅집고])
+        text = re.sub(r"\[[^\]]+\]", "", text)
+        
+        # 4. 텍스트 양쪽에 붙은 불필요한 따옴표 및 공백 제거
+        text = text.strip().strip('\"').strip()
+        
+        # 5. 내부의 여분의 공백을 하나로 정리
+        text = re.sub(r"\s+", " ", text)
+        
+        return text
+
 
     def get_publication_date(self) -> str:
         try:
