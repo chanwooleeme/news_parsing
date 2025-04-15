@@ -8,7 +8,7 @@ from qdrant_client.http.models import PointStruct
 from qdrant_client.models import Filter as QdrantFilter
 
 class QdrantVectorStore(VectorStore):
-    def __init__(self, qdrant_client: QdrantClient, collection_name: str, max_workers: int = 10):
+    def __init__(self, qdrant_client: QdrantClient, collection_name: str = "economy-articles", max_workers: int = 10):
         self.qdrant = qdrant_client
         self.collection_name = collection_name
         self.max_workers = max_workers

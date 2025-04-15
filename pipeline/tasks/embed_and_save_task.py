@@ -1,15 +1,18 @@
-from typing import List, Dict, Tuple
+# /pipeline/tasks/embed_and_save_task.py
+
+from typing import List, Dict
 from utils.file import (
     read_json_file,
     list_directories,
     list_files,
     join_path,
 )
-from embedding.embedding import NewsEmbedding
+from clients.openai_batcher import OpenAIBatcher
 from vector_store.vector_store import NewsVectorStore
 from clients.qdrant_vector_store import QdrantVectorStore
-from logger import get_logger
 from utils.client import get_openai_client, get_qdrant_client
+from agentic_retriever.config.models import ModelName
+from logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -48,8 +51,9 @@ def embed_and_save_task(parsed_base_dir: str) -> int:
     contents = [article.get("content", "") for article in articles]
     
     # 2. 임베딩 생성
-    embedder = NewsEmbedding(get_openai_client())
-    embeddings = embedder.embed_batch(contents)
+    openai_client = get_openai_client()
+    batcher = OpenAIBatcher(openai_client, model=ModelName.TEXT_EMBEDDING_3_LARGE)
+    embeddings = batcher.batch_embed(contents)
     
     logger.info(f"총 {len(embeddings)}개 임베딩 생성 완료")
     
@@ -62,7 +66,8 @@ def embed_and_save_task(parsed_base_dir: str) -> int:
     logger.info(f"총 {len(vectors_and_metadata)}개 기사-임베딩 매칭 완료")
     
     # 4. Qdrant에 저장
-    vector_store = NewsVectorStore(QdrantVectorStore(get_qdrant_client(), collection_name="economy-articles"))
+    qdrant_client = get_qdrant_client()
+    vector_store = NewsVectorStore(QdrantVectorStore(qdrant_client, collection_name="economy-articles"))
     point_ids = vector_store.batch_insert(vectors_and_metadata)
     
     success_count = len([pid for pid in point_ids if pid])

@@ -58,6 +58,7 @@ services:
       - ./pipeline/dags:/opt/airflow/dags
       - ./pipeline/tasks:/opt/airflow/tasks
       - ./pipeline/utils:/opt/airflow/utils
+      - ./src:/opt/airflow/src
     depends_on:
       - postgres
       - redis
@@ -88,6 +89,7 @@ services:
       - ./pipeline/dags:/opt/airflow/dags
       - ./pipeline/tasks:/opt/airflow/tasks
       - ./pipeline/utils:/opt/airflow/utils
+      - ./src:/opt/airflow/src
     depends_on:
       - airflow-webserver
     restart: always
@@ -116,6 +118,7 @@ services:
       - ./pipeline/dags:/opt/airflow/dags
       - ./pipeline/tasks:/opt/airflow/tasks
       - ./pipeline/utils:/opt/airflow/utils
+      - ./src:/opt/airflow/src
     depends_on:
       - airflow-scheduler
       - redis

@@ -1,10 +1,16 @@
 # /agentic_retriever/evaluator/sufficiency_checker.py
 
 from typing import List, Tuple
+from clients.openai_batcher import OpenAIBatcher
+from agentic_retriever.config.models import ModelName
+from agentic_retriever.prompts.sufficiency_checker_prompt import (
+    SUFFICIENCY_SYSTEM_PROMPT,
+    SUFFICIENCY_USER_PROMPT_TEMPLATE,
+)
 
 class SufficiencyChecker:
-    def __init__(self, gpt_client):
-        self.gpt = gpt_client
+    def __init__(self, openai_client, model: ModelName=ModelName.GPT_4O_MINI):
+        self.batcher = OpenAIBatcher(openai_client, model=model)
         self.experts = [
             {
                 "name": "비관적 전문가",
@@ -31,23 +37,28 @@ class SufficiencyChecker:
 
     def check_sufficiency(self, summary: str) -> Tuple[bool, List[str]]:
         """
-        전문가 3명에게 sufficiency 평가 요청
+        전문가 3명 sufficiency 평가 요청
         :param summary: 최종 요약 텍스트
         :return: (부족 여부, 전문가별 평가 리스트)
         """
-        decisions = []
-
+        # 1. 전문가별 프롬프트 생성
+        prompts = []
         for expert in self.experts:
-            prompt = (
-                f"{expert['persona']}\n\n"
-                "아래 경제 뉴스 요약을 보고, 리포트를 작성하기에 충분한 정보가 있는지 평가하세요.\n"
-                "충분하면 'YES', 부족하면 'NO'로만 답하십시오.\n\n"
-                f"요약 내용:\n{summary}"
+            user_prompt = SUFFICIENCY_USER_PROMPT_TEMPLATE.format(
+                persona=expert["persona"],
+                summary=summary
             )
-            response = self.gpt.chat_completion(prompt)
-            decision = response.strip().upper()
-            decisions.append(decision)
+            prompts.append(user_prompt)
 
+        # 2. batch chat_completion 호출
+        responses = self.batcher.batch_chat_completion(
+            prompts=prompts,
+            system_prompt=SUFFICIENCY_SYSTEM_PROMPT,
+        )
+
+        decisions = [resp.strip().upper() for resp in responses]
+
+        # 3. 최종 sufficiency 판정
         no_count = decisions.count("NO")
-        is_insufficient = no_count >= 2  # 3명 중 2명 이상이 NO면 부족
+        is_insufficient = no_count >= 2  # 3명 중 2명이 NO면 부족
         return is_insufficient, decisions

@@ -1,6 +1,7 @@
-from typing import List, Dict, Tuple
-from src.clients.vector_store import VectorStore
-from qdrant_client.models import Filter, FieldCondition, MatchAny
+from typing import List, Dict, Optional, Tuple
+from datetime import datetime
+from clients.vector_store import VectorStore
+from qdrant_client.models import Filter, FieldCondition, MatchAny, Range
 
 class NewsVectorStore:
     def __init__(self, vector_store: VectorStore):
@@ -13,9 +14,6 @@ class NewsVectorStore:
         return self.vector_store.batch_insert(vectors_and_metadata)
 
     def search_by_economic_variables(self, economic_variables: List[str], top_k: int = 10) -> List[Dict]:
-        """
-        경제 변수 필터 기반 검색
-        """
         query_filter = Filter(
             must=[
                 FieldCondition(
@@ -31,7 +29,6 @@ class NewsVectorStore:
             query_filter=query_filter
         )
 
-
         articles = []
         for point in results:
             payload = point["payload"]
@@ -43,3 +40,40 @@ class NewsVectorStore:
             })
 
         return articles
+
+    def retrieve_news(
+        self,
+        economic_variables: List[str],
+        recent_days: Optional[int] = None,
+        limit: int = 10
+    ) -> List[Dict]:
+        """경제 변수 + 최근 날짜 조건까지 필터해서 뉴스 검색"""
+        must_conditions = []
+
+        if economic_variables:
+            must_conditions.append(
+                FieldCondition(
+                    key="economic_variables",
+                    match=MatchAny(any=economic_variables)
+                )
+            )
+
+        if recent_days is not None:
+            now_ts = int(datetime.utcnow().timestamp())
+            start_ts = now_ts - (recent_days * 86400)  # 초 단위
+            must_conditions.append(
+                FieldCondition(
+                    key="publication_date",
+                    range=Range(gte=start_ts)
+                )
+            )
+
+        query_filter = Filter(must=must_conditions)
+
+        results = self.vector_store.search(
+            query_vector=None,
+            top_k=limit,
+            query_filter=query_filter
+        )
+
+        return [point["payload"] for point in results]
