@@ -12,13 +12,8 @@ authors = [
 dependencies = [
     "openai",
     "qdrant-client",
-    "feedparser",
-    "requests",
-    "redis",
-    "python-dotenv",
-    "pydantic",
-    "fastapi",
-    "uvicorn"
+    "tiktoken",
+    "feedparser"
 ]
 
 [tool.setuptools.packages.find]
@@ -26,6 +21,10 @@ where = ["src"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.package-data]
+"hybrid_economy_predictor" = ["hybrid_economy_predictor/model/*.joblib"]
 
 [tool.pyright]
 include = ["pipeline"]

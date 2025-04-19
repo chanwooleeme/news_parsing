@@ -6,9 +6,9 @@ import os
 
 from tasks.download_html_task import download_html_task
 from tasks.parse_filtered_articles_task import parse_and_save_articles_task
-from tasks.embed_and_save_task import embed_and_save_task
 from tasks.s3_upload_task import s3_upload_task
-from tasks.delete_file_task import delete_file_task
+from tasks.predict_economoy_articles_task import predict_economy_articles_task
+# from tasks.delete_file_task import delete_file_task
 
 # 경로 세팅 (환경변수 읽거나, 직접 지정)
 BASE_DATA_DIR = os.getenv("BASE_DATA_DIR", "/opt/airflow/data")
@@ -65,32 +65,31 @@ with DAG(
         return parsed_run_dir
 
     @task
-    def embed(parsed_dir):
-        # 임베딩 생성 및 바로 Qdrant에 저장
-        count = embed_and_save_task(parsed_base_dir=parsed_dir)
-        return count
+    def predict(parsed_dir):
+        # 기사 예측 async 호출
+        predict_economy_articles_task(parsed_dir=parsed_dir)
 
     @task
     def upload_to_s3(html_dir):
         s3_upload_task(html_dir=html_dir)
         return html_dir
 
-    @task
-    def delete_file(html_dir, parsed_dir):
-        delete_file_task(html_dir=html_dir, parsed_news_dir=parsed_dir)
+    # @task
+    # def delete_file(html_dir, parsed_dir):
+    #     delete_file_task(html_dir=html_dir, parsed_news_dir=parsed_dir)
 
     # 태스크 호출 및 의존성 설정
     html_dir = download()
     parsed_dir = parse(html_dir)
-    embed_result = embed(parsed_dir)
+    predict_result = predict(parsed_dir)
     upload_result = upload_to_s3(html_dir)
-    delete_result = delete_file(html_dir=html_dir, parsed_dir=parsed_dir)
+    # delete_result = delete_file(html_dir=html_dir, parsed_dir=parsed_dir)
     
     # 태스크 간 의존성 설정
-    html_dir >> parsed_dir >> embed_result
+    html_dir >> parsed_dir >> predict_result
 
     # 2. upload는 download 후 언제든 가능
     html_dir >> upload_result
 
     # 3. delete는 모든 작업이 완료된 후에만 실행
-    [upload_result, embed_result] >> delete_result
+    # [upload_result, embed_result] >> delete_result

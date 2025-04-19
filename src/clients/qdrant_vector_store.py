@@ -86,7 +86,7 @@ class QdrantVectorStore(VectorStore):
                 with_payload=True,
                 with_vectors=False
             )
-            points = search_result.points
+            points = search_result
 
         articles = []
         for point in points:

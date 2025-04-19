@@ -1,21 +1,6 @@
 from html_parser.parser_factory import ParserFactory
 from utils.file import list_files, list_directories, join_path, splitext_filename, read_text_file, save_dict_as_json
-from typing import Dict, Any, List
-from utils.economy_keyword import KEYWORD_TABLE
-
-def filter_article_by_keyword(parsed: Dict[str, Any], keyword_table: Dict[str, List[str]]) -> Dict[str, Any]:
-    text = (parsed.get("title", "") + " " + parsed.get("content", "")).lower()
-    matched_categories = []
-    for category, keywords in keyword_table.items():
-        for keyword in keywords:
-            if keyword.lower() in text:
-                matched_categories.append(category)
-                break  # 해당 카테고리 키워드 중 하나라도 매칭되면 다음 카테고리로 넘어감
-    
-    # 파싱된 결과에 'economic_variables' 필드 추가
-    parsed['economic_variables'] = matched_categories
-    return parsed
-        
+            
 def parse_and_save_articles_task(html_base_dir: str, parsed_base_dir: str) -> None:
     """기사 파싱 후 저장
 
@@ -43,7 +28,6 @@ def parse_and_save_articles_task(html_base_dir: str, parsed_base_dir: str) -> No
             try:
                 html_content = read_text_file(html_path)
                 parsed = parser_factory.parse(html_content, newspaper=newspaper_name)
-                parsed = filter_article_by_keyword(parsed, KEYWORD_TABLE)
                 save_dict_as_json(
                     data=parsed,
                     save_dir=join_path(parsed_base_dir, newspaper_name),

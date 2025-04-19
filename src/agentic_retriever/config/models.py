@@ -4,7 +4,8 @@ class ModelName(Enum):
     GPT_4O = ("gpt-4o", 128000, False)
     GPT_4O_MINI = ("gpt-4o-mini", 128000, False)
     TEXT_EMBEDDING_3_LARGE = ("text-embedding-3-large", 8191, True)
-
+    TEXT_EMBEDDING_3_SMALL = ("text-embedding-3-small", 8191, True)
+    
     def __init__(self, model_name: str, max_input_tokens: int, is_embedding: bool):
         self._model_name = model_name
         self._max_input_tokens = max_input_tokens

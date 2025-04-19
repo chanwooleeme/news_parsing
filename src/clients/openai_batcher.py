@@ -7,7 +7,7 @@ from typing import List
 logger = get_logger(__name__)
 
 class OpenAIBatcher:
-    def __init__(self, openai_client: OpenAI, model: ModelName, max_tokens=128000, margin=2000):
+    def __init__(self, openai_client: OpenAI, model: ModelName=ModelName.TEXT_EMBEDDING_3_SMALL, max_tokens=128000, margin=2000):
         self.client = openai_client
         self.model = model
         self.max_tokens = max_tokens
@@ -105,7 +105,7 @@ class OpenAIBatcher:
                     model=self.model.name,
                     input=batch
                 )
-                embeddings = [item["embedding"] for item in response.data]
+                embeddings = [item.embedding for item in response.data]
                 all_embeddings.extend(embeddings)
                 logger.info(f"✅ 배치 {i+1}/{len(batches)} 처리 완료")
             except Exception as e:
@@ -116,10 +116,11 @@ class OpenAIBatcher:
                             model=self.model.name,
                             input=[text]
                         )
-                        embedding = response.data[0]["embedding"]
+                        embedding = response.data[0].embedding
                         all_embeddings.append(embedding)
                     except Exception as inner_e:
                         logger.error(f"❌ 단일 임베딩 실패: {inner_e}")
-                        all_embeddings.append([])  # fallback: 빈 벡터
+                        dim = 1536 if self.model.name == "text-embedding-3-small" else 3072
+                        all_embeddings.append([0] * dim)  # fallback: 빈 벡터
 
         return all_embeddings

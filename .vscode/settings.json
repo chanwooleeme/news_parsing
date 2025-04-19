@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "/Users/lee/Desktop/news_parsing/pipeline",
+        "/Users/lee/Desktop/news_parsing/src"
+    ]
+} 
