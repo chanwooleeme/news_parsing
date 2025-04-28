@@ -31,8 +31,7 @@ RUN mkdir -p /opt/airflow/data/html_files /opt/airflow/data/parsed_articles /opt
 # airflow 유저로
 USER airflow
 
-# 임베딩 모델 핵심 의존성 설치
-RUN pip install openai qdrant-client tiktoken feedparser
+RUN pip install openai qdrant-client tiktoken feedparser markdown
 
 # 패키지 설치
 RUN pip install -e /opt/airflow

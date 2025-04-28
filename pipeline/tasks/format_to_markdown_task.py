@@ -7,7 +7,7 @@ from logger import get_logger
 
 logger = get_logger(__name__)
 
-def format_article_to_markdown(article: dict) -> str:
+def format_article_to_markdown(number_emoji: str, article: dict) -> str:
     """하나의 뉴스 기사를 이쁘게 문서용 마크다운으로 변환"""
     headline = article.get('headline', '')
     summary_bullets = article.get('summary_bullets', [])
@@ -18,14 +18,13 @@ def format_article_to_markdown(article: dict) -> str:
     economic_principle_explanation = article.get('economic_principle_explanation', '')
 
     sections = [
-        f"# 📰 {headline}\n",
-        f"## 📌 요약",
-        "\n".join(f"- {bullet}" for bullet in summary_bullets),
-        f"\n## 🧠 배경\n{background}",
-        f"\n## 🔎 세부 사항\n{event_detail}",
-        f"\n## 📊 시장 반응\n{market_reaction}",
-        f"\n## 🚀 향후 전망\n{future_implication}",
-        f"\n## 📚 경제 원리 설명\n{economic_principle_explanation}",
+        f"#{number_emoji} {headline}",
+        f"## 📌 요약\n" + "\n".join(f"- {bullet}" for bullet in summary_bullets),
+        f"## 🧠 배경\n{background}",
+        f"## 🔎 세부 사항\n{event_detail}",
+        f"## 📊 시장 반응\n{market_reaction}",
+        f"## 🚀 향후 전망\n{future_implication}",
+        f"## 📚 경제 원리 설명\n{economic_principle_explanation}",
     ]
 
     markdown = "\n\n".join(sections)
@@ -45,27 +44,26 @@ def format_to_markdown(input_file_path: str, output_file_path: str):
     logger.info("🔄 카드 리포트 마크다운 변환 시작")
     
     try:
-        # 입력 파일 로드
         with open(input_file_path, 'r', encoding='utf-8') as f:
             card_reports = json.load(f)
         
-        # 각 카드 리포트를 마크다운으로 변환
+        # 각 기사 마크다운 변환
         markdowns = []
-        for article in card_reports:
-            markdown = format_article_to_markdown(article)
+        number_emojis = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]
+        for i, article in enumerate(card_reports):
+            markdown = format_article_to_markdown(number_emojis[i], article)
             markdowns.append(markdown)
         
-        # 모든 마크다운 합치기
-        merged_markdown = "\n\n\n" + "\n\n\n".join(markdowns)
+
+        final_markdown = ("\n\n<br><br><br>\n\n").join(markdowns)
         
-        # 출력 파일 저장
         os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
         with open(output_file_path, 'w', encoding='utf-8') as f:
-            f.write(merged_markdown)
+            f.write(final_markdown)
         
         logger.info(f"✅ 마크다운 변환 완료: {len(markdowns)}개 기사")
         return output_file_path
         
     except Exception as e:
         logger.error(f"❌ 마크다운 변환 실패: {str(e)}")
-        raise 
+        raise

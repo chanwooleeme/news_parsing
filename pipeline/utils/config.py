@@ -1,6 +1,5 @@
 import os
 from dotenv import load_dotenv
-import requests
 
 # 환경 변수 확인
 IS_DOCKER = os.getenv('IS_DOCKER', 'false').lower() == 'true'
@@ -22,11 +21,8 @@ REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
 
-BASE_API_URL = os.getenv("BASE_API_URL", "http://34.47.87.73:8000/api")
+REDIS_SERVER = os.getenv("REDIS_SERVER", "localhost")
+REDIS_SERVER_PORT = int(os.getenv("REDIS_SERVER_PORT", 6379))
+REDIS_SERVER_PASSWORD = os.getenv("REDIS_SERVER_PASSWORD", "")
 
-def call_api(url):
-    try:
-        response = requests.get(url)
-        return response.json()
-    except Exception as e:
-        return None
+BASE_API_URL = os.getenv("BASE_API_URL", "http://34.47.87.73:8000/api")

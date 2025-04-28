@@ -29,6 +29,43 @@ def find_html_files_recursive(dir_path):
     
     return all_html_files
 
+def upload_to_s3(file_path: str, bucket_name: str, object_key: str, 
+                content_type: str = 'text/markdown'):
+    """
+    단일 파일을 S3에 업로드 (ACL 없이)
+    """
+    logger.info(f"🔄 S3 업로드 시작: {file_path} -> s3://{bucket_name}/{object_key}")
+    
+    try:
+        if not os.path.exists(file_path):
+            logger.error(f"❌ 파일을 찾을 수 없습니다: {file_path}")
+            return False
+
+        s3_client = boto3.client("s3", region_name="ap-northeast-2")
+
+        extra_args = {
+            'ContentType': content_type,
+            'CacheControl': 'no-cache, max-age=0'
+        }
+        
+        s3_client.upload_file(
+            Filename=file_path,
+            Bucket=bucket_name,
+            Key=object_key,
+            ExtraArgs=extra_args
+        )
+        
+        logger.info(f"✅ S3 업로드 완료: s3://{bucket_name}/{object_key}")
+        return True
+        
+    except ClientError as e:
+        logger.error(f"❌ S3 업로드 실패 (ClientError): {str(e)}")
+        return False
+    except Exception as e:
+        logger.error(f"❌ S3 업로드 실패 (Exception): {str(e)}")
+        return False
+
+
 def s3_upload_task(html_dir: str):
     try:
         logger.info(f"Starting S3 upload task for {html_dir}")
