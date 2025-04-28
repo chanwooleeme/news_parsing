@@ -6,7 +6,7 @@ import os
 
 logger = getLogger(__name__)
 MAX_BATCH_SIZE = 100
-BASE_API_URL = os.getenv("BASE_API_URL", "http://34.47.87.73:8000/api")
+BASE_API_URL = os.getenv("BASE_API_URL")
 
 # 📰 기사 로딩
 def load_articles_from_directory(base_dir: str) -> List[Dict]:

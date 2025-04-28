@@ -5,7 +5,6 @@ import json
 import os
 from agentic_retriever.evaluator.sufficiency_checker import SufficiencyChecker
 from agentic_retriever.config.models import ModelName
-from typing import List
 from utils.config import BASE_API_URL
 import requests
 from utils.client import get_openai_client

@@ -99,8 +99,3 @@ def s3_upload_task(html_dir: str):
         logger.error(f"Error in S3 upload task: {str(e)}")
         raise
 
-
-if __name__ == "__main__":
-    # 환경 변수에서 HTML 디렉토리 경로를 가져오거나 기본값 사용
-    html_dir = os.getenv("HTML_DOWNLOAD_DIR", "/Users/lee/Desktop/news_parsing/pipeline/tasks/html_files")
-    s3_upload_task(html_dir=html_dir)

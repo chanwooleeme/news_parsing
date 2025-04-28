@@ -112,6 +112,18 @@ services:
       - AWS_REGION=${AWS_REGION}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET}
       - IS_DOCKER=true
+      - AIRFLOW__CELERY__WORKER_CONCURRENCY=4
+      - AIRFLOW__CELERY__WORKER_PREFETCH_MULTIPLIER=1
+      - AIRFLOW__CELERY__WORKER_MEMORY_LIMIT=4096
+      - AIRFLOW__CELERY__WORKER_TIMEOUT=300
+      - AIRFLOW__WEBSERVER__WORKER_REFRESH_BATCH_SIZE=1
+      - AIRFLOW__WEBSERVER__WORKER_REFRESH_INTERVAL=3600
+      - AIRFLOW__CORE__DAGBAG_IMPORT_TIMEOUT=120
+      - AIRFLOW__LOGGING__LOGGING_LEVEL=INFO
+      - PYTHONUNBUFFERED=1
+      - OMP_NUM_THREADS=1
+      - OPENBLAS_NUM_THREADS=1
+      - MKL_NUM_THREADS=1
     volumes:
       - ./data:/opt/airflow/data
       - ./logs:/opt/airflow/logs
@@ -125,6 +137,14 @@ services:
       - postgres
     restart: always
     command: ["celery", "worker"]
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          cpus: '2'
+        reservations:
+          memory: 4G
+          cpus: '1'
 
 volumes:
   postgres-db-volume:

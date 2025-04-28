@@ -34,4 +34,5 @@ def save_report(input_file_path: str, output_file_path: str):
         
     except Exception as e:
         logger.error(f"❌ 마크다운 리포트 저장 실패: {str(e)}")
-        raise 
+        raise
+    

@@ -12,7 +12,7 @@ if not IS_DOCKER:
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Qdrant 설정
-QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
+QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "economy-articles")
 
@@ -25,4 +25,4 @@ REDIS_SERVER = os.getenv("REDIS_SERVER", "localhost")
 REDIS_SERVER_PORT = int(os.getenv("REDIS_SERVER_PORT", 6379))
 REDIS_SERVER_PASSWORD = os.getenv("REDIS_SERVER_PASSWORD", "")
 
-BASE_API_URL = os.getenv("BASE_API_URL", "http://34.47.87.73:8000/api")
+BASE_API_URL = os.getenv("BASE_API_URL")

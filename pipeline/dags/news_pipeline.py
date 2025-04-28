@@ -8,8 +8,8 @@ import os
 from tasks.download_html_task import download_html_task
 from tasks.parse_filtered_articles_task import parse_and_save_articles_task
 from tasks.s3_upload_task import s3_upload_task
-from tasks.predict_economoy_articles_task import predict_economy_articles_task
-# from tasks.delete_file_task import delete_file_task
+from tasks.predict_economy_articles_task import predict_economy_articles_task
+
 
 # 경로 세팅 (환경변수 읽거나, 직접 지정)
 BASE_DATA_DIR = os.getenv("BASE_DATA_DIR", "/opt/airflow/data")
@@ -21,6 +21,12 @@ RSS_SOURCE_FILE = os.getenv("RSS_SOURCE_FILE", "/opt/airflow/data/economy.json")
 def get_run_specific_path(base_dir, run_id):
     """각 DAG 실행별 고유 경로 생성"""
     return os.path.join(base_dir, f"run_{run_id}")
+
+# 메모리 집약적 태스크를 위한 설정
+high_memory_config = {
+    "pool": "high_memory_pool",
+    "queue": "high_memory_queue"
+}
 
 default_args = {
     'owner': 'airflow',
@@ -52,7 +58,7 @@ with DAG(
 
         return html_run_dir
 
-    @task
+    @task(executor_config=high_memory_config)
     def parse(html_dir, **context):
         # 실행별 고유 디렉토리 사용
         run_id = context['run_id']
@@ -66,7 +72,7 @@ with DAG(
         # 다음 태스크에서 사용할 수 있도록 경로 반환
         return parsed_run_dir
 
-    @task
+    @task(executor_config=high_memory_config)
     def predict(parsed_dir):
         # 기사 예측 async 호출
         predict_economy_articles_task(parsed_dir=parsed_dir)

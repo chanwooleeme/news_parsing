@@ -84,4 +84,3 @@ def select_top_articles(top_n: int = 5) -> List[Dict]:
             break
 
     return final_selection[:top_n]
-

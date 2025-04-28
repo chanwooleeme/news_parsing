@@ -65,4 +65,5 @@ def send_to_slack(card_reports_path: str, report_url: str):
             
     except Exception as e:
         logger.error(f"❌ 슬랙 전송 중 오류 발생: {str(e)}")
-        raise 
+        raise
+    

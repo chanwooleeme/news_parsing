@@ -3,7 +3,6 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
-from airflow.models import Variable
 from datetime import timedelta, datetime
 import os
 from logger import get_logger
@@ -26,6 +25,12 @@ default_args = {
     'owner': 'airflow',
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
+}
+
+# 메모리 집약적 태스크를 위한 executor 설정
+high_memory_config = {
+    "pool": "high_memory_pool",
+    "queue": "high_memory_queue"
 }
 
 # S3 버킷 이름 가져오기
@@ -62,16 +67,17 @@ with DAG(
         },
     )
     
-    # 2. 충분성 체크
+    # 2. 충분성 체크 (메모리 많이 사용)
     check_sufficient_task = PythonOperator(
         task_id='check_sufficient',
         python_callable=check_sufficient,
         op_kwargs={
             'input_file_path': '/tmp/retrieved_articles.json',
         },
+        executor_config=high_memory_config,
     )
     
-    # 3. 카드 리포트 생성
+    # 3. 카드 리포트 생성 (메모리 많이 사용)
     generate_card_reports_task = PythonOperator(
         task_id='generate_card_reports',
         python_callable=generate_card_reports,
@@ -79,6 +85,7 @@ with DAG(
             'output_file_path': '/tmp/card_reports.json',
             'max_reports': 5
         },
+        executor_config=high_memory_config,
     )
     
     # 4. 마크다운으로 포맷팅

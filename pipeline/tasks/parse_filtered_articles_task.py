@@ -37,14 +37,3 @@ def parse_and_save_articles_task(html_base_dir: str, parsed_base_dir: str) -> No
                 print(f"✅ {newspaper_name}/{filename} 파싱 및 저장 완료")
             except Exception as e:
                 print(f"❌ {newspaper_name}/{filename} 처리 실패: {e}")
-
-if __name__ == "__main__":
-    import os
-    from logger import get_logger
-    logger = get_logger(__name__)
-    logger.info("Parsing and saving articles...")
-    parse_and_save_articles_task(
-        html_base_dir=os.getenv('HTML_DOWNLOAD_DIR', 'html_files'),
-        parsed_base_dir=os.getenv('PARSED_ARTICLES_DIR', 'parsed_articles')
-    )
-    

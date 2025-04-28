@@ -1,7 +1,6 @@
 from logger import get_logger
 from utils.file import list_files, list_directories, join_path
 import os
-from typing import List
 
 logger = get_logger(__name__)
 

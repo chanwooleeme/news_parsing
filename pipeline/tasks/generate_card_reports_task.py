@@ -50,3 +50,4 @@ def generate_card_reports(output_file_path: str, max_reports: int = 5):
     except Exception as e:
         logger.error(f"❌ 카드 리포트 생성 실패: {str(e)}")
         raise 
+    
