@@ -12,7 +12,10 @@ class OpenAIBatcher:
         self.model = model
         self.max_tokens = max_tokens
         self.margin = margin
-        self.encoding = tiktoken.encoding_for_model(self.model.name)
+        if model == ModelName.GPT_4O_MINI:
+            self.encoding = tiktoken.encoding_for_model("gpt-4o")
+        else:
+            self.encoding = tiktoken.encoding_for_model(self.model.name)
         logger.info(f"🔄 OpenAIBatcher 초기화 완료 (model: {model.name}, max_tokens: {max_tokens}, margin: {margin})")
 
     def _count_tokens(self, text: str) -> int:

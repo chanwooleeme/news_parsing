@@ -1,5 +1,5 @@
 from typing import List, Dict, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from clients.vector_store import VectorStore
 from qdrant_client.models import Filter, FieldCondition, MatchAny, Range
 
@@ -13,6 +13,31 @@ class NewsVectorStore:
     def batch_insert(self, vectors_and_metadata: List[Tuple[List[float], Dict[str, str]]]) -> List[str]:
         return self.vector_store.batch_insert(vectors_and_metadata)
 
+    def retrieve_today_news(self, top_k: int = 10) -> List[Dict]:
+        now = datetime.now(timezone.utc)
+        today_start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
+        tomorrow_start = today_start + timedelta(days=1)
+
+        query_filter = Filter(
+            must=[
+                FieldCondition(
+                    key="publication_date",
+                    range=Range(
+                        gte=int(today_start.timestamp()),
+                        lt=int(tomorrow_start.timestamp())
+                    )
+                )
+            ]
+        )
+
+        results = self.vector_store.search(
+            query_vector=None,
+            top_k=top_k,
+            query_filter=query_filter
+        )
+
+        return [point["payload"] for point in results]
+    
     def search_by_economic_variables(self, economic_variables: List[str], top_k: int = 10) -> List[Dict]:
         query_filter = Filter(
             must=[

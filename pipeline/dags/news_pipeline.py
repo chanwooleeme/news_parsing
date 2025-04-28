@@ -1,5 +1,6 @@
 from airflow import DAG
 from airflow.decorators import task
+from airflow.exceptions import AirflowSkipException
 from airflow.utils.dates import days_ago
 from datetime import timedelta
 import os
@@ -42,12 +43,13 @@ with DAG(
         run_id = context['run_id'] 
         html_run_dir = get_run_specific_path(HTML_DIR, run_id)
         
-        download_html_task(
+        download_result = download_html_task(
             html_download_dir=html_run_dir,
             rss_source_file=RSS_SOURCE_FILE,
         )
-        
-        # 다음 태스크에서 사용할 수 있도록 HTML 디렉토리 경로 반환
+        if len(download_result) == 0:
+            raise AirflowSkipException("새로운 기사 없음! 패스")
+
         return html_run_dir
 
     @task

@@ -8,7 +8,8 @@ def download_html_task(html_download_dir: str, rss_source_file: str):
     downloader = HtmlDownloader(config)
     rss_source = read_json_file(rss_source_file)
     rss_links_by_publisher = downloader.parse_rss_sources(rss_source)
-    downloader.download_articles(rss_links_by_publisher)
+    result = downloader.download_articles(rss_links_by_publisher)
+    return result
 
 
 if __name__ == "__main__":

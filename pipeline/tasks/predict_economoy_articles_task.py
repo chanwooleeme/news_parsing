@@ -2,9 +2,11 @@ from typing import List, Dict
 from logging import getLogger
 from utils.file import list_directories, list_files, join_path, read_json_file
 import requests
+import os
 
 logger = getLogger(__name__)
 MAX_BATCH_SIZE = 100
+BASE_API_URL = os.getenv("BASE_API_URL", "http://34.47.87.73:8000/api")
 
 # 📰 기사 로딩
 def load_articles_from_directory(base_dir: str) -> List[Dict]:
@@ -43,8 +45,8 @@ def batch_articles(articles: List[Dict], batch_size: int = MAX_BATCH_SIZE) -> Li
 # 🚀 동기 API 호출 (수정)
 def call_predict(batch, idx): # async 제거, session 제거
     try:
-        # aiohttp 대신 requests 사용 (수정)
-        response = requests.post("http://34.47.87.73:8000/predict_and_store", json=batch, timeout=180) # 타임아웃 3분으로 설정
+        # aiohttp 대신 requests 사용 (수정)s
+        response = requests.post(BASE_API_URL + "/predict", json=batch, timeout=180) # 타임아웃 3분으로 설정
         logger.info(f"✅ Batch {idx} 응답 코드: {response.status_code}") # resp.status -> response.status_code
         # 응답 상태 코드 확인 추가
         if response.status_code != 200:
@@ -62,9 +64,10 @@ def predict_all_batches(batches): # async 제거 (수정)
 
 # 🎯 최종 실행 함수
 def predict_economy_articles_task(parsed_dir: str):
+    logger.info("API URL: " + BASE_API_URL + "/predict")
     articles = load_articles_from_directory(parsed_dir)
     batches = batch_articles(articles)
 
-    logger.info(f"🚀 총 {len(batches)}개 배치 동기 요청 시작")
+    logger.info(f"🚀 총 {len(batches)}개 배치 동기 요청 시작")      
     predict_all_batches(batches)
     logger.info("✅ 모든 기사 예측 완료")
