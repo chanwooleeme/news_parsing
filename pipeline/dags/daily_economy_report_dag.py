@@ -7,6 +7,8 @@ from airflow.models import Variable
 from datetime import timedelta, datetime
 import os
 from logger import get_logger
+from airflow.operators.bash import BashOperator
+from airflow.sensors.time_delta import TimeDeltaSensor
 
 # 태스크 임포트
 from tasks.retrieve_news_task import retrieve_news
@@ -34,8 +36,8 @@ def get_report_bucket():
     return os.environ.get('REPORT_BUCKET', 'economy-report')
 
 # GitHub Pages URL 가져오기
-def get_github_pages_url():
-    return os.environ.get('GITHUB_PAGES_URL', 'https://github.com')
+def get_my_page_url():
+    return os.environ.get('MY_PAGE_URL', 'https://economy-report.eeddyy.org/')
 
 # 예시: "2025/04/28.md" 형태
 def get_object_key():
@@ -134,17 +136,24 @@ with DAG(
             'public_read': False
         },
     )
-
-    # 9. 슬랙으로 전송
+    
+    # 10분 대기
+    wait_task = TimeDeltaSensor(
+        task_id='wait_10_minutes',
+        delta=timedelta(minutes=10),
+        poke_interval=60,  # 1분마다 확인
+    )
+    
+    # 9. 슬랙으로 전송 (10분 후)
     send_to_slack_task = PythonOperator(
         task_id='send_to_slack',
         python_callable=send_to_slack,
         op_kwargs={
             'card_reports_path': '/tmp/card_reports.json',
-            'report_url': get_github_pages_url(),
+            'report_url': get_my_page_url(),
         },
     )
     
     # 워크플로우 정의
     retrieve_news_task >> check_sufficient_task >> generate_card_reports_task >> format_to_markdown_task >> save_report_task
-    save_report_task >> s3_upload_task_archive >> convert_md_to_html_task >> s3_upload_task_report >> send_to_slack_task
+    save_report_task >> s3_upload_task_archive >> convert_md_to_html_task >> s3_upload_task_report >> wait_task >> send_to_slack_task
