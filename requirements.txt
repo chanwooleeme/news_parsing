@@ -2,3 +2,5 @@ openai
 qdrant-client
 tiktoken
 feedparser
+datasketch
+redis
