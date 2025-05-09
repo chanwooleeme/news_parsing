@@ -16,6 +16,7 @@ BASE_DATA_DIR = os.getenv("BASE_DATA_DIR", "/opt/airflow/data")
 HTML_DIR = os.path.join(BASE_DATA_DIR, "html_files")
 PARSED_DIR = os.path.join(BASE_DATA_DIR, "parsed_articles")
 RSS_SOURCE_FILE = os.getenv("RSS_SOURCE_FILE", "/opt/airflow/data/economy.json")
+PICKLE_PATH = os.getenv("PICKLE_PATH", "/opt/airflow/data/minhash_lsh.pkl")
 
 # 각 실행별 고유 경로 생성 함수
 def get_run_specific_path(base_dir, run_id):
@@ -66,7 +67,8 @@ with DAG(
         
         parse_and_save_articles_task(   
             html_base_dir=html_dir,
-            parsed_base_dir=parsed_run_dir
+            parsed_base_dir=parsed_run_dir,
+            pickle_path=PICKLE_PATH
         )
         
         # 다음 태스크에서 사용할 수 있도록 경로 반환
