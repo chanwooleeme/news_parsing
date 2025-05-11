@@ -74,11 +74,18 @@ def check_existing_articles(parsed_base_dir, title, content):
 
 
 def parse_and_save_articles_task(html_base_dir: str, parsed_base_dir: str, pickle_path: str) -> None:
+    # 필요한 디렉토리 생성
+    os.makedirs(html_base_dir, exist_ok=True)
+    os.makedirs(parsed_base_dir, exist_ok=True)
+    os.makedirs(os.path.dirname(pickle_path), exist_ok=True)
+
     parser_factory = ParserFactory()
     lsh = load_lsh(pickle_path)
 
     for newspaper_name in list_directories(html_base_dir):
         newspaper_path = join_path(html_base_dir, newspaper_name)
+        parsed_newspaper_path = join_path(parsed_base_dir, newspaper_name)
+        os.makedirs(parsed_newspaper_path, exist_ok=True)
 
         for filename in list_files(newspaper_path, extension=".html"):
             html_path = join_path(newspaper_path, filename)
@@ -102,7 +109,7 @@ def parse_and_save_articles_task(html_base_dir: str, parsed_base_dir: str, pickl
 
                 save_dict_as_json(
                     data=parsed,
-                    save_dir=join_path(parsed_base_dir, newspaper_name),
+                    save_dir=parsed_newspaper_path,
                     filename=splitext_filename(filename)
                 )
 

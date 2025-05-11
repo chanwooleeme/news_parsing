@@ -21,7 +21,9 @@ PICKLE_PATH = os.getenv("PICKLE_PATH", "/opt/airflow/data/minhash_lsh.pkl")
 # 각 실행별 고유 경로 생성 함수
 def get_run_specific_path(base_dir, run_id):
     """각 DAG 실행별 고유 경로 생성"""
-    return os.path.join(base_dir, f"run_{run_id}")
+    path = os.path.join(base_dir, f"run_{run_id}")
+    os.makedirs(path, exist_ok=True)
+    return path
 
 # 메모리 집약적 태스크를 위한 설정
 high_memory_config = {
