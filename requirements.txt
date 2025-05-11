@@ -2,5 +2,11 @@ openai
 qdrant-client
 tiktoken
 feedparser
+markdown
 datasketch
 redis
+pandas
+numpy
+beautifulsoup4
+requests
+python-dotenv
